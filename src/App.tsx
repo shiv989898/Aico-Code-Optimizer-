@@ -77,13 +77,25 @@ export default function App() {
         body: JSON.stringify({ code, language, action }),
       });
 
+      const text = await response.text();
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to process code');
+        let errorMessage = 'Failed to process code';
+        try {
+          const errorData = JSON.parse(text);
+          errorMessage = errorData.error || errorMessage;
+        } catch (e) {
+          errorMessage = `Server error (${response.status}): ${text.slice(0, 50)}...`;
+        }
+        throw new Error(errorMessage);
       }
 
-      const data: OptimizationResult = await response.json();
-      setResult(data);
+      try {
+        const data: OptimizationResult = JSON.parse(text);
+        setResult(data);
+      } catch (e) {
+        throw new Error(`Invalid response format: ${text.slice(0, 50)}...`);
+      }
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred.');
     } finally {
