@@ -1,0 +1,5 @@
+{
+  "name": "AICO (AI Code Optimizer)",
+  "description": "A React-based web application that allows users to paste a single-program solution written in C++, Python, or Java and receive an optimized version of that code using the Google Gemini API.",
+  "requestFramePermissions": []
+}
