@@ -27,10 +27,10 @@ const Editor = ({ code, setCode, language, actionLabel }: { code: string, setCod
   };
 
   return (
-    <div className="flex-1 flex overflow-hidden bg-[#050505]/80 relative group min-h-0">
+    <div className="flex-1 flex overflow-hidden bg-black/20 relative group min-h-0">
       <div 
         ref={lineNumbersRef}
-        className="w-10 sm:w-12 flex-shrink-0 bg-[#020202] border-r border-white/5 text-right pr-2 sm:pr-3 py-3 sm:py-5 font-mono text-[11px] sm:text-[13px] leading-relaxed text-neutral-700 select-none overflow-hidden"
+        className="w-10 sm:w-12 flex-shrink-0 bg-black/40 border-r border-white/5 text-right pr-2 sm:pr-3 py-3 sm:py-5 font-mono text-[11px] sm:text-[13px] leading-relaxed text-neutral-700 select-none overflow-hidden"
       >
         {lines.map(line => (
           <div key={line} className={line > lineCount && code !== '' ? 'opacity-0' : ''}>{line}</div>
@@ -151,7 +151,7 @@ export default function App() {
       <div className="absolute bottom-[-20%] right-[-10%] w-[70%] h-[70%] rounded-full bg-blue-500 opacity-[0.015] blur-[120px] pointer-events-none" />
 
       {/* Header */}
-      <header className="h-14 sm:h-16 border-b border-white/10 bg-[#000000]/60 backdrop-blur-xl flex items-center justify-between px-3 sm:px-4 lg:px-6 z-20 shrink-0">
+      <header className="h-14 sm:h-16 border-b border-white/5 bg-black/40 backdrop-blur-2xl flex items-center justify-between px-3 sm:px-4 lg:px-6 z-20 shrink-0">
         <div className="flex items-center gap-2 sm:gap-3 flex-1">
           <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center border border-white/10 shadow-sm shrink-0">
             <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
@@ -179,7 +179,7 @@ export default function App() {
                   {isActive && (
                     <motion.div
                       layoutId="activeAction"
-                      className="absolute inset-0 ios-glass-btn rounded-full"
+                      className="absolute inset-0 ios-glass-active-pill rounded-full"
                       transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     />
                   )}
@@ -193,7 +193,7 @@ export default function App() {
 
         {/* Status - Right aligned */}
         <div className="flex items-center justify-end gap-4 text-sm text-neutral-400 font-mono flex-1 hidden md:flex">
-          <span className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-[#0a0a0a]/80 backdrop-blur-md text-[10px] uppercase tracking-wider shadow-inner">
+          <span className="flex items-center gap-2 px-3 py-1.5 rounded-full ios-glass-panel text-[10px] uppercase tracking-wider">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
             System Online
           </span>
@@ -204,9 +204,9 @@ export default function App() {
       <main className="flex-1 flex flex-col lg:flex-row w-full p-2 sm:p-4 lg:p-6 gap-2 sm:gap-4 lg:gap-6 relative z-10 overflow-hidden">
         
         {/* Left Pane: Editor */}
-        <section className="flex-1 lg:w-1/2 flex flex-col rounded-xl sm:rounded-2xl border border-white/10 bg-[#050505]/60 backdrop-blur-md overflow-hidden shadow-2xl relative group min-h-0">
+        <section className="flex-1 lg:w-1/2 flex flex-col rounded-xl sm:rounded-2xl ios-glass-panel overflow-hidden relative group min-h-0">
           {/* Header */}
-          <div className="flex items-center justify-between px-3 sm:px-5 py-2.5 sm:py-3.5 border-b border-white/10 bg-[#0a0a0a]/80 shrink-0">
+          <div className="flex items-center justify-between px-3 sm:px-5 py-2.5 sm:py-3.5 border-b border-white/5 bg-black/20 shrink-0">
             <div className="flex items-center gap-2 sm:gap-3">
               <TerminalSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-neutral-500 shrink-0" />
               <h2 className="text-[10px] sm:text-xs font-mono text-neutral-300 uppercase tracking-wider truncate">Input Source</h2>
@@ -242,7 +242,7 @@ export default function App() {
           <Editor code={code} setCode={setCode} language={language} actionLabel={actionConfig[action].label} />
 
           {/* Footer / Action Button */}
-          <div className="p-2 sm:p-4 border-t border-white/10 bg-[#0a0a0a]/80 shrink-0">
+          <div className="p-2 sm:p-4 border-t border-white/5 bg-black/20 shrink-0">
             <AnimatePresence>
               {error && (
                 <motion.div
@@ -282,8 +282,8 @@ export default function App() {
         </section>
 
         {/* Right Pane: Results */}
-        <section className="flex-1 lg:w-1/2 flex flex-col rounded-xl sm:rounded-2xl border border-white/10 bg-[#050505]/60 backdrop-blur-md overflow-hidden shadow-2xl relative min-h-0">
-          <div className="flex items-center justify-between px-3 sm:px-5 py-2.5 sm:py-3.5 border-b border-white/10 bg-[#0a0a0a]/80 shrink-0">
+        <section className="flex-1 lg:w-1/2 flex flex-col rounded-xl sm:rounded-2xl ios-glass-panel overflow-hidden relative min-h-0">
+          <div className="flex items-center justify-between px-3 sm:px-5 py-2.5 sm:py-3.5 border-b border-white/5 bg-black/20 shrink-0">
             <div className="flex items-center gap-2 sm:gap-3">
               <Activity className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${actionConfig[action].color} shrink-0`} />
               <h2 className="text-[10px] sm:text-xs font-mono text-neutral-300 uppercase tracking-wider truncate">Output & Analysis</h2>
@@ -339,8 +339,8 @@ export default function App() {
                 >
                   {/* Output Code Block */}
                   {result.optimizedCode && (
-                    <motion.div variants={itemVariants} className="flex flex-col rounded-xl border border-white/10 bg-[#0a0a0a] overflow-hidden shadow-xl shrink-0">
-                      <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-2.5 border-b border-white/5 bg-[#050505]">
+                    <motion.div variants={itemVariants} className="flex flex-col rounded-xl ios-glass-panel overflow-hidden shrink-0">
+                      <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-2.5 border-b border-white/5 bg-black/40">
                         <div className="flex items-center gap-1.5 sm:gap-2">
                           <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-red-500/20 border border-red-500/50"></div>
                           <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-yellow-500/20 border border-yellow-500/50"></div>
@@ -358,7 +358,7 @@ export default function App() {
                           )}
                         </button>
                       </div>
-                      <div className="text-[11px] sm:text-[13px] leading-relaxed font-mono bg-[#050505] overflow-x-auto max-h-[40vh] sm:max-h-none">
+                      <div className="text-[11px] sm:text-[13px] leading-relaxed font-mono bg-black/20 overflow-x-auto max-h-[40vh] sm:max-h-none">
                         <SyntaxHighlighter
                           language={getSyntaxLanguage(language)}
                           style={vscDarkPlus}
@@ -378,7 +378,7 @@ export default function App() {
 
                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 sm:gap-6 shrink-0">
                     {/* Analysis */}
-                    <motion.div variants={itemVariants} className="rounded-xl border border-white/10 bg-[#0a0a0a]/80 backdrop-blur-sm p-3 sm:p-6 shadow-xl relative overflow-hidden">
+                    <motion.div variants={itemVariants} className="rounded-xl ios-glass-panel p-3 sm:p-6 relative overflow-hidden">
                       <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${actionConfig[action].bg} to-transparent opacity-20 blur-2xl rounded-full transform translate-x-1/2 -translate-y-1/2`}></div>
                       <h3 className="text-[9px] sm:text-[11px] font-mono text-neutral-500 uppercase tracking-widest mb-2 sm:mb-4 flex items-center gap-2 relative z-10">
                         <Activity className={`w-3 h-3 sm:w-4 sm:h-4 ${actionConfig[action].color}`} />
@@ -390,7 +390,7 @@ export default function App() {
                     </motion.div>
 
                     {/* Key Points List */}
-                    <motion.div variants={itemVariants} className="rounded-xl border border-white/10 bg-[#0a0a0a]/80 backdrop-blur-sm p-3 sm:p-6 shadow-xl relative overflow-hidden">
+                    <motion.div variants={itemVariants} className="rounded-xl ios-glass-panel p-3 sm:p-6 relative overflow-hidden">
                       <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${actionConfig[action].bg} to-transparent opacity-20 blur-2xl rounded-full transform translate-x-1/2 -translate-y-1/2`}></div>
                       <h3 className="text-[9px] sm:text-[11px] font-mono text-neutral-500 uppercase tracking-widest mb-2 sm:mb-4 flex items-center gap-2 relative z-10">
                         <CheckCircle2 className={`w-3 h-3 sm:w-4 sm:h-4 ${actionConfig[action].color}`} />
