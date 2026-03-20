@@ -47,6 +47,26 @@ Code to test:
 ${code}
 \`\`\`
 `;
+      } else if (action === 'debug') {
+        prompt = `You are an expert software engineer and debugger.
+Find and fix bugs in the following ${language} code.
+Explain the root cause of the bugs and how you fixed them.
+
+Code to debug:
+\`\`\`${language}
+${code}
+\`\`\`
+`;
+      } else if (action === 'document') {
+        prompt = `You are an expert software engineer and technical writer.
+Add comprehensive documentation (JSDoc, docstrings, or equivalent) to the following ${language} code.
+Explain the parameters, return types, and purpose of functions/classes.
+
+Code to document:
+\`\`\`${language}
+${code}
+\`\`\`
+`;
       } else {
         prompt = `You are an expert competitive programmer and software engineer.
 Optimize the following ${language} code.

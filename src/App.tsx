@@ -1,11 +1,11 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Code2, Zap, CheckCircle2, Activity, ChevronRight, Copy, Check, Sparkles, TerminalSquare, BookOpen, TestTube, Trash2, ArrowRight } from 'lucide-react';
+import { Code2, Zap, CheckCircle2, Activity, ChevronRight, Copy, Check, Sparkles, TerminalSquare, BookOpen, TestTube, Trash2, ArrowRight, Download, Upload, Bug, FileText } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
-type Language = 'C++' | 'Python' | 'Java';
-type Action = 'optimize' | 'explain' | 'tests';
+type Language = 'C++' | 'Python' | 'Java' | 'JavaScript' | 'TypeScript' | 'Rust' | 'Go';
+type Action = 'optimize' | 'explain' | 'tests' | 'debug' | 'document';
 
 interface OptimizationResult {
   optimizedCode: string;
@@ -19,6 +19,7 @@ const Editor = ({ code, setCode, language, actionLabel }: { code: string, setCod
   const lines = Array.from({ length: displayLines }, (_, i) => i + 1);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lineNumbersRef = useRef<HTMLDivElement>(null);
+  const [isFocused, setIsFocused] = useState(false);
 
   const handleScroll = () => {
     if (lineNumbersRef.current && textareaRef.current) {
@@ -27,10 +28,10 @@ const Editor = ({ code, setCode, language, actionLabel }: { code: string, setCod
   };
 
   return (
-    <div className="flex-1 flex overflow-hidden bg-black/20 relative group min-h-0">
+    <div className={`flex-1 flex overflow-hidden bg-black/20 relative group min-h-0 transition-colors duration-300 ${isFocused ? 'bg-black/40' : ''}`}>
       <div 
         ref={lineNumbersRef}
-        className="w-10 sm:w-12 flex-shrink-0 bg-black/40 border-r border-white/5 text-right pr-2 sm:pr-3 py-3 sm:py-5 font-mono text-[11px] sm:text-[13px] leading-relaxed text-neutral-700 select-none overflow-hidden"
+        className={`w-10 sm:w-12 flex-shrink-0 bg-black/40 border-r border-white/5 text-right pr-2 sm:pr-3 py-3 sm:py-5 font-mono text-[11px] sm:text-[13px] leading-relaxed select-none overflow-hidden transition-colors duration-300 ${isFocused ? 'text-neutral-500' : 'text-neutral-700'}`}
       >
         {lines.map(line => (
           <div key={line} className={line > lineCount && code !== '' ? 'opacity-0' : ''}>{line}</div>
@@ -41,6 +42,8 @@ const Editor = ({ code, setCode, language, actionLabel }: { code: string, setCod
         value={code}
         onChange={(e) => setCode(e.target.value)}
         onScroll={handleScroll}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
         placeholder={`// Paste your ${language} code here...\n\nfunction example() {\n  // Needs ${actionLabel.toLowerCase()}\n}`}
         className="flex-1 bg-transparent resize-none p-3 sm:p-5 text-[12px] sm:text-[13px] leading-relaxed font-mono text-neutral-300 placeholder:text-neutral-700 focus:outline-none custom-scrollbar"
         spellCheck={false}
@@ -111,11 +114,65 @@ export default function App() {
     }
   };
 
+  const downloadCode = () => {
+    if (result?.optimizedCode) {
+      const blob = new Blob([result.optimizedCode], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      let ext = 'txt';
+      switch (language) {
+        case 'C++': ext = 'cpp'; break;
+        case 'Python': ext = 'py'; break;
+        case 'Java': ext = 'java'; break;
+        case 'JavaScript': ext = 'js'; break;
+        case 'TypeScript': ext = 'ts'; break;
+        case 'Rust': ext = 'rs'; break;
+        case 'Go': ext = 'go'; break;
+      }
+      
+      a.download = `output.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      setCode(content);
+      
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      switch (ext) {
+        case 'cpp': case 'cc': case 'cxx': case 'h': case 'hpp': setLanguage('C++'); break;
+        case 'py': setLanguage('Python'); break;
+        case 'java': setLanguage('Java'); break;
+        case 'js': case 'jsx': setLanguage('JavaScript'); break;
+        case 'ts': case 'tsx': setLanguage('TypeScript'); break;
+        case 'rs': setLanguage('Rust'); break;
+        case 'go': setLanguage('Go'); break;
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
   const getSyntaxLanguage = (lang: Language) => {
     switch (lang) {
       case 'C++': return 'cpp';
       case 'Python': return 'python';
       case 'Java': return 'java';
+      case 'JavaScript': return 'javascript';
+      case 'TypeScript': return 'typescript';
+      case 'Rust': return 'rust';
+      case 'Go': return 'go';
       default: return 'javascript';
     }
   };
@@ -123,7 +180,9 @@ export default function App() {
   const actionConfig = {
     optimize: { icon: Zap, label: 'Optimize', color: 'text-emerald-400', bg: 'from-emerald-400/20', border: 'border-emerald-400/20' },
     explain: { icon: BookOpen, label: 'Explain', color: 'text-blue-400', bg: 'from-blue-400/20', border: 'border-blue-400/20' },
-    tests: { icon: TestTube, label: 'Tests', color: 'text-purple-400', bg: 'from-purple-400/20', border: 'border-purple-400/20' }
+    tests: { icon: TestTube, label: 'Tests', color: 'text-purple-400', bg: 'from-purple-400/20', border: 'border-purple-400/20' },
+    debug: { icon: Bug, label: 'Debug', color: 'text-red-400', bg: 'from-red-400/20', border: 'border-red-400/20' },
+    document: { icon: FileText, label: 'Document', color: 'text-amber-400', bg: 'from-amber-400/20', border: 'border-amber-400/20' }
   };
 
   const CurrentIcon = actionConfig[action].icon;
@@ -147,61 +206,63 @@ export default function App() {
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
       
       {/* Background Glows */}
-      <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] rounded-full bg-emerald-500 opacity-[0.015] blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[70%] h-[70%] rounded-full bg-blue-500 opacity-[0.015] blur-[120px] pointer-events-none" />
+      <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] rounded-full bg-emerald-500 opacity-[0.03] blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[70%] h-[70%] rounded-full bg-blue-500 opacity-[0.03] blur-[120px] pointer-events-none" />
 
       {/* Header */}
-      <header className="h-14 sm:h-16 border-b border-white/5 bg-black/40 backdrop-blur-2xl flex items-center justify-between px-3 sm:px-4 lg:px-6 z-20 shrink-0">
-        <div className="flex items-center gap-2 sm:gap-3 flex-1">
-          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center border border-white/10 shadow-sm shrink-0">
-            <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+      <header className="h-14 sm:h-16 border-b border-white/5 bg-black/40 backdrop-blur-2xl flex items-center justify-center z-20 shrink-0">
+        <div className="w-full max-w-[1800px] mx-auto flex items-center justify-between px-3 sm:px-4 lg:px-6">
+          <div className="flex items-center gap-2 sm:gap-3 flex-1">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center border border-white/10 shadow-sm shrink-0">
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+            </div>
+            <div className="hidden sm:block">
+              <h1 className="text-base sm:text-lg font-bold font-display tracking-tight text-white leading-none">AICO</h1>
+              <p className="text-[8px] sm:text-[9px] font-mono text-neutral-500 uppercase tracking-[0.2em] mt-1">Studio</p>
+            </div>
           </div>
-          <div className="hidden sm:block">
-            <h1 className="text-base sm:text-lg font-bold font-display tracking-tight text-white leading-none">AICO</h1>
-            <p className="text-[8px] sm:text-[9px] font-mono text-neutral-500 uppercase tracking-[0.2em] mt-1">Studio</p>
+          
+          {/* Action Selector - Centered */}
+          <div className="flex justify-center flex-none">
+            <div className="flex ios-glass-panel rounded-full p-1 border border-white/10 shadow-inner">
+              {(Object.keys(actionConfig) as Action[]).map((a) => {
+                const Icon = actionConfig[a].icon;
+                const isActive = action === a;
+                return (
+                  <button
+                    key={a}
+                    onClick={() => setAction(a)}
+                    className={`relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-1 sm:py-1.5 text-[11px] sm:text-xs font-medium rounded-full transition-all duration-300 ${
+                      isActive ? 'text-white' : 'text-neutral-500 hover:text-neutral-300'
+                    }`}
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeAction"
+                        className="absolute inset-0 ios-glass-active-pill rounded-full"
+                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                      />
+                    )}
+                    <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 relative z-10 shrink-0" />
+                    <span className="relative z-10 hidden sm:inline">{actionConfig[a].label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
-        
-        {/* Action Selector - Centered */}
-        <div className="flex justify-center flex-none">
-          <div className="flex ios-glass-panel rounded-full p-1 border border-white/10 shadow-inner">
-            {(Object.keys(actionConfig) as Action[]).map((a) => {
-              const Icon = actionConfig[a].icon;
-              const isActive = action === a;
-              return (
-                <button
-                  key={a}
-                  onClick={() => setAction(a)}
-                  className={`relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-1 sm:py-1.5 text-[11px] sm:text-xs font-medium rounded-full transition-all duration-300 ${
-                    isActive ? 'text-white' : 'text-neutral-500 hover:text-neutral-300'
-                  }`}
-                >
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeAction"
-                      className="absolute inset-0 ios-glass-active-pill rounded-full"
-                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                    />
-                  )}
-                  <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 relative z-10 shrink-0" />
-                  <span className="relative z-10">{actionConfig[a].label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
 
-        {/* Status - Right aligned */}
-        <div className="flex items-center justify-end gap-4 text-sm text-neutral-400 font-mono flex-1 hidden md:flex">
-          <span className="flex items-center gap-2 px-3 py-1.5 rounded-full ios-glass-panel text-[10px] uppercase tracking-wider">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-            System Online
-          </span>
+          {/* Status - Right aligned */}
+          <div className="flex items-center justify-end gap-4 text-sm text-neutral-400 font-mono flex-1 hidden md:flex">
+            <span className="flex items-center gap-2 px-3 py-1.5 rounded-full ios-glass-panel text-[10px] uppercase tracking-wider">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+              System Online
+            </span>
+          </div>
         </div>
       </header>
 
       {/* Main Content - Stretched Layout */}
-      <main className="flex-1 flex flex-col lg:flex-row w-full p-2 sm:p-4 lg:p-6 gap-2 sm:gap-4 lg:gap-6 relative z-10 overflow-hidden">
+      <main className="flex-1 flex flex-col lg:flex-row w-full max-w-[1800px] mx-auto p-2 sm:p-4 lg:p-6 gap-2 sm:gap-4 lg:gap-6 relative z-10 overflow-hidden">
         
         {/* Left Pane: Editor */}
         <section className="flex-1 lg:w-1/2 flex flex-col rounded-xl sm:rounded-2xl ios-glass-panel overflow-hidden relative group min-h-0">
@@ -211,30 +272,44 @@ export default function App() {
               <TerminalSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-neutral-500 shrink-0" />
               <h2 className="text-[10px] sm:text-xs font-mono text-neutral-300 uppercase tracking-wider truncate">Input Source</h2>
             </div>
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="flex ios-glass-panel rounded-lg p-0.5">
-                {(['C++', 'Python', 'Java'] as Language[]).map((lang) => (
-                  <button
-                    key={lang}
-                    onClick={() => setLanguage(lang)}
-                    className={`px-2 sm:px-3 py-1 text-[10px] sm:text-[11px] font-mono rounded transition-all ${
-                      language === lang
-                        ? 'ios-glass-btn text-white'
-                        : 'text-neutral-500 hover:text-neutral-300 hover:bg-white/5'
-                    }`}
-                  >
-                    {lang}
-                  </button>
-                ))}
+            <div className="flex items-center gap-2 sm:gap-3 overflow-hidden">
+              <div className="flex ios-glass-panel rounded-lg p-0.5 overflow-x-auto custom-scrollbar">
+                {(['C++', 'Python', 'Java', 'JavaScript', 'TypeScript', 'Rust', 'Go'] as Language[]).map((lang) => {
+                  const isActive = language === lang;
+                  return (
+                    <button
+                      key={lang}
+                      onClick={() => setLanguage(lang)}
+                      className={`relative px-2 sm:px-3 py-1 text-[10px] sm:text-[11px] font-mono rounded transition-all shrink-0 ${
+                        isActive ? 'text-white' : 'text-neutral-500 hover:text-neutral-300 hover:bg-white/5'
+                      }`}
+                    >
+                      {isActive && (
+                        <motion.div
+                          layoutId="activeLanguage"
+                          className="absolute inset-0 ios-glass-btn rounded"
+                          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                        />
+                      )}
+                      <span className="relative z-10">{lang}</span>
+                    </button>
+                  );
+                })}
               </div>
-              <div className="w-px h-4 bg-white/10 mx-0.5 sm:mx-1"></div>
-              <button
-                onClick={() => setCode('')}
-                className="ios-glass-btn text-neutral-500 hover:text-red-400 p-1.5 sm:p-2 rounded-lg group"
-                title="Clear code"
-              >
-                <Trash2 className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
-              </button>
+              <div className="w-px h-4 bg-white/10 mx-0.5 sm:mx-1 shrink-0"></div>
+              <div className="flex items-center gap-1 shrink-0">
+                <label className="ios-glass-btn text-neutral-500 hover:text-blue-400 p-1.5 sm:p-2 rounded-lg cursor-pointer group" title="Upload file">
+                  <Upload className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                  <input type="file" className="hidden" onChange={handleFileUpload} accept=".cpp,.cc,.cxx,.h,.hpp,.py,.java,.js,.jsx,.ts,.tsx,.rs,.go,.txt" />
+                </label>
+                <button
+                  onClick={() => setCode('')}
+                  className="ios-glass-btn text-neutral-500 hover:text-red-400 p-1.5 sm:p-2 rounded-lg group"
+                  title="Clear code"
+                >
+                  <Trash2 className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -301,12 +376,12 @@ export default function App() {
                   transition={{ duration: 0.2 }}
                   className="h-full flex flex-col items-center justify-center text-neutral-600"
                 >
-                  <div className="w-12 h-12 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl border border-white/5 bg-[#0a0a0a] flex items-center justify-center mb-3 sm:mb-5 shadow-inner relative overflow-hidden">
+                  <div className="w-12 h-12 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl ios-glass-panel flex items-center justify-center mb-3 sm:mb-5 shadow-inner relative overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-50"></div>
-                    <Code2 className="w-5 h-5 sm:w-8 sm:h-8 text-neutral-700 relative z-10" />
+                    <Code2 className="w-5 h-5 sm:w-8 sm:h-8 text-neutral-500 relative z-10 animate-pulse" />
                   </div>
-                  <p className="font-mono text-[11px] sm:text-sm text-neutral-500">Awaiting source code...</p>
-                  <p className="font-sans text-[10px] sm:text-xs text-neutral-600 mt-2 max-w-[250px] text-center px-4 hidden sm:block">
+                  <p className="font-mono text-[11px] sm:text-sm text-neutral-400">Awaiting source code...</p>
+                  <p className="font-sans text-[10px] sm:text-xs text-neutral-500 mt-2 max-w-[250px] text-center px-4 hidden sm:block">
                     Enter your code in the left pane and click process to see the magic happen.
                   </p>
                 </motion.div>
@@ -320,12 +395,12 @@ export default function App() {
                   className="h-full flex flex-col items-center justify-center"
                 >
                   <div className="relative mb-4 sm:mb-8">
-                    <div className="w-12 h-12 sm:w-20 sm:h-20 border border-white/10 rounded-2xl sm:rounded-3xl bg-[#0a0a0a] flex items-center justify-center shadow-2xl relative overflow-hidden">
+                    <div className="w-12 h-12 sm:w-20 sm:h-20 ios-glass-panel rounded-2xl sm:rounded-3xl flex items-center justify-center shadow-2xl relative overflow-hidden">
                        <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-50"></div>
                        <div className={`w-5 h-5 sm:w-8 sm:h-8 border-2 ${actionConfig[action].color} rounded-full border-t-transparent animate-spin relative z-10`}></div>
                     </div>
                     {/* Glow effect behind spinner */}
-                    <div className={`absolute inset-0 blur-2xl opacity-20 bg-gradient-to-br ${actionConfig[action].bg} rounded-full`}></div>
+                    <div className={`absolute inset-0 blur-2xl opacity-30 bg-gradient-to-br ${actionConfig[action].bg} rounded-full`}></div>
                   </div>
                   <p className={`font-mono text-[10px] sm:text-sm ${actionConfig[action].color} animate-pulse tracking-wide text-center px-4`}>Analyzing AST & processing logic...</p>
                 </motion.div>
@@ -347,16 +422,26 @@ export default function App() {
                           <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-green-500/20 border border-green-500/50"></div>
                           <span className="ml-2 sm:ml-3 text-[9px] sm:text-[10px] font-mono text-neutral-500 uppercase tracking-widest truncate">output.{getSyntaxLanguage(language)}</span>
                         </div>
-                        <button
-                          onClick={copyToClipboard}
-                          className="ios-glass-btn flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-[9px] sm:text-[11px] font-mono text-neutral-400 hover:text-white rounded-md transition-colors shrink-0 group"
-                        >
-                          {copied ? (
-                            <><Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400" /> <span className="hidden sm:inline">Copied</span></>
-                          ) : (
-                            <><Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5 group-hover:scale-110 transition-transform" /> <span className="hidden sm:inline">Copy</span></>
-                          )}
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={downloadCode}
+                            className="ios-glass-btn flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-[9px] sm:text-[11px] font-mono text-neutral-400 hover:text-white rounded-md transition-colors shrink-0 group"
+                            title="Download code"
+                          >
+                            <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5 group-hover:scale-110 transition-transform" />
+                            <span className="hidden sm:inline">Download</span>
+                          </button>
+                          <button
+                            onClick={copyToClipboard}
+                            className="ios-glass-btn flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-[9px] sm:text-[11px] font-mono text-neutral-400 hover:text-white rounded-md transition-colors shrink-0 group"
+                          >
+                            {copied ? (
+                              <><Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400" /> <span className="hidden sm:inline">Copied</span></>
+                            ) : (
+                              <><Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5 group-hover:scale-110 transition-transform" /> <span className="hidden sm:inline">Copy</span></>
+                            )}
+                          </button>
+                        </div>
                       </div>
                       <div className="text-[11px] sm:text-[13px] leading-relaxed font-mono bg-black/20 overflow-x-auto max-h-[40vh] sm:max-h-none">
                         <SyntaxHighlighter
@@ -396,9 +481,9 @@ export default function App() {
                         <CheckCircle2 className={`w-3 h-3 sm:w-4 sm:h-4 ${actionConfig[action].color}`} />
                         Key Points
                       </h3>
-                      <ul className="space-y-2 sm:space-y-3 relative z-10">
+                      <ul className="space-y-1 sm:space-y-2 relative z-10">
                         {result.improvements.map((improvement, index) => (
-                          <li key={index} className="flex items-start gap-2 sm:gap-3 text-[11px] sm:text-[13px] text-neutral-300 font-sans">
+                          <li key={index} className="flex items-start gap-2 sm:gap-3 text-[11px] sm:text-[13px] text-neutral-300 font-sans p-2 rounded-lg hover:bg-white/5 transition-colors">
                             <ChevronRight className={`w-3 h-3 sm:w-4 sm:h-4 ${actionConfig[action].color} opacity-70 shrink-0 mt-0.5`} />
                             <span className="leading-relaxed">{improvement}</span>
                           </li>
