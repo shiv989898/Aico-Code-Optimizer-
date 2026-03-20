@@ -94,6 +94,28 @@ const Dropdown = ({ value, options, onChange, icon: Icon, align = 'left', classN
 const Editor = ({ code, setCode, language, actionLabel, fontSize, onProcess }: { code: string, setCode: (c: string) => void, language: string, actionLabel: string, fontSize: number, onProcess: () => void }) => {
   const [cursor, setCursor] = useState({ line: 1, col: 1 });
 
+  const handleEditorWillMount = (monaco: any) => {
+    monaco.editor.defineTheme('aico-dark', {
+      base: 'vs-dark',
+      inherit: true,
+      rules: [],
+      colors: {
+        'editor.background': '#00000000',
+        'editor.lineHighlightBackground': '#ffffff0a',
+        'editorLineNumber.foreground': '#525252',
+        'editorLineNumber.activeForeground': '#a3a3a3',
+        'editor.selectionBackground': '#3b82f640',
+        'editor.inactiveSelectionBackground': '#3b82f620',
+        'editorCursor.foreground': '#3b82f6',
+        'editorWidget.background': '#0a0a0a',
+        'editorWidget.border': '#262626',
+        'editorSuggestWidget.background': '#0a0a0a',
+        'editorSuggestWidget.border': '#262626',
+        'editorSuggestWidget.selectedBackground': '#ffffff10',
+      }
+    });
+  };
+
   const handleEditorDidMount = (editor: any, monaco: any) => {
     editor.onDidChangeCursorPosition((e: any) => {
       setCursor({ line: e.position.lineNumber, col: e.position.column });
@@ -106,13 +128,14 @@ const Editor = ({ code, setCode, language, actionLabel, fontSize, onProcess }: {
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      <div className="flex-1 relative group bg-black/20">
+      <div className="flex-1 relative group bg-transparent">
         <MonacoEditor
           height="100%"
           language={getSyntaxLanguage(language)}
-          theme="vs-dark"
+          theme="aico-dark"
           value={code}
           onChange={(value) => setCode(value || '')}
+          beforeMount={handleEditorWillMount}
           onMount={handleEditorDidMount}
           options={{
             minimap: { enabled: false },
