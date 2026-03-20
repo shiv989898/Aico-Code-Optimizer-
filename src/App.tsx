@@ -1,8 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Code2, Zap, CheckCircle2, Activity, ChevronRight, Copy, Check, Sparkles, TerminalSquare, BookOpen, TestTube, Trash2, ArrowRight, Download, Upload, Bug, FileText, ShieldAlert, Wand2, MessageSquare, Rocket, AlignLeft, ZoomIn, ZoomOut, ChevronDown } from 'lucide-react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import MonacoEditor from '@monaco-editor/react';
 
 type Language = 'C++' | 'Python' | 'Java' | 'JavaScript' | 'TypeScript' | 'Rust' | 'Go' | 'C#' | 'Swift' | 'Kotlin' | 'Ruby' | 'PHP' | 'SQL';
@@ -611,20 +609,26 @@ export default function App() {
                           </button>
                         </div>
                       </div>
-                      <div className="text-[11px] sm:text-[13px] leading-relaxed font-mono bg-black/20 overflow-x-auto max-h-[40vh] sm:max-h-none">
-                        <SyntaxHighlighter
+                      <div className="text-[11px] sm:text-[13px] leading-relaxed font-mono bg-black/20 overflow-hidden h-[40vh] sm:h-[50vh]">
+                        <MonacoEditor
+                          height="100%"
                           language={getSyntaxLanguage(language)}
-                          style={vscDarkPlus}
-                          wrapLongLines={wordWrap}
-                          customStyle={{
-                            margin: 0,
-                            padding: '1rem',
-                            background: 'transparent',
-                            fontSize: `${fontSize}px`,
+                          theme="aico-dark"
+                          value={result.optimizedCode}
+                          options={{
+                            readOnly: true,
+                            minimap: { enabled: false },
+                            fontSize: fontSize,
+                            wordWrap: wordWrap ? 'on' : 'off',
+                            padding: { top: 16 },
+                            scrollBeyondLastLine: false,
+                            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                            renderLineHighlight: 'none',
+                            smoothScrolling: true,
+                            cursorBlinking: 'solid',
+                            domReadOnly: true,
                           }}
-                        >
-                          {result.optimizedCode}
-                        </SyntaxHighlighter>
+                        />
                       </div>
                     </motion.div>
                   )}
