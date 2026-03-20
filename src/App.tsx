@@ -1,11 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Code2, Zap, CheckCircle2, Activity, ChevronRight, Copy, Check, Sparkles, TerminalSquare, BookOpen, TestTube, Trash2, ArrowRight, Download, Upload, Bug, FileText } from 'lucide-react';
+import { Code2, Zap, CheckCircle2, Activity, ChevronRight, Copy, Check, Sparkles, TerminalSquare, BookOpen, TestTube, Trash2, ArrowRight, Download, Upload, Bug, FileText, ShieldAlert, Wand2, MessageSquare, Rocket, AlignLeft, ZoomIn, ZoomOut } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
-type Language = 'C++' | 'Python' | 'Java' | 'JavaScript' | 'TypeScript' | 'Rust' | 'Go';
-type Action = 'optimize' | 'explain' | 'tests' | 'debug' | 'document';
+type Language = 'C++' | 'Python' | 'Java' | 'JavaScript' | 'TypeScript' | 'Rust' | 'Go' | 'C#' | 'Swift' | 'Kotlin' | 'Ruby' | 'PHP' | 'SQL';
+type Action = 'optimize' | 'explain' | 'tests' | 'debug' | 'document' | 'security' | 'refactor' | 'review' | 'modernize';
 
 interface OptimizationResult {
   optimizedCode: string;
@@ -13,7 +13,7 @@ interface OptimizationResult {
   complexityAnalysis: string;
 }
 
-const Editor = ({ code, setCode, language, actionLabel }: { code: string, setCode: (c: string) => void, language: string, actionLabel: string }) => {
+const Editor = ({ code, setCode, language, actionLabel, fontSize }: { code: string, setCode: (c: string) => void, language: string, actionLabel: string, fontSize: number }) => {
   const lineCount = code.split('\n').length;
   const displayLines = Math.max(10, lineCount);
   const lines = Array.from({ length: displayLines }, (_, i) => i + 1);
@@ -31,7 +31,8 @@ const Editor = ({ code, setCode, language, actionLabel }: { code: string, setCod
     <div className={`flex-1 flex overflow-hidden bg-black/20 relative group min-h-0 transition-colors duration-300 ${isFocused ? 'bg-black/40' : ''}`}>
       <div 
         ref={lineNumbersRef}
-        className={`w-10 sm:w-12 flex-shrink-0 bg-black/40 border-r border-white/5 text-right pr-2 sm:pr-3 py-3 sm:py-5 font-mono text-[11px] sm:text-[13px] leading-relaxed select-none overflow-hidden transition-colors duration-300 ${isFocused ? 'text-neutral-500' : 'text-neutral-700'}`}
+        className={`w-10 sm:w-12 flex-shrink-0 bg-black/40 border-r border-white/5 text-right pr-2 sm:pr-3 py-3 sm:py-5 font-mono leading-relaxed select-none overflow-hidden transition-colors duration-300 ${isFocused ? 'text-neutral-500' : 'text-neutral-700'}`}
+        style={{ fontSize: `${fontSize}px` }}
       >
         {lines.map(line => (
           <div key={line} className={line > lineCount && code !== '' ? 'opacity-0' : ''}>{line}</div>
@@ -45,7 +46,8 @@ const Editor = ({ code, setCode, language, actionLabel }: { code: string, setCod
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         placeholder={`// Paste your ${language} code here...\n\nfunction example() {\n  // Needs ${actionLabel.toLowerCase()}\n}`}
-        className="flex-1 bg-transparent resize-none p-3 sm:p-5 text-[12px] sm:text-[13px] leading-relaxed font-mono text-neutral-300 placeholder:text-neutral-700 focus:outline-none custom-scrollbar"
+        className="flex-1 bg-transparent resize-none p-3 sm:p-5 leading-relaxed font-mono text-neutral-300 placeholder:text-neutral-700 focus:outline-none custom-scrollbar whitespace-pre"
+        style={{ fontSize: `${fontSize}px` }}
         spellCheck={false}
       />
     </div>
@@ -60,6 +62,20 @@ export default function App() {
   const [result, setResult] = useState<OptimizationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [wordWrap, setWordWrap] = useState(true);
+  const [fontSize, setFontSize] = useState(13);
+
+  useEffect(() => {
+    const savedCode = localStorage.getItem('aico_code');
+    const savedLang = localStorage.getItem('aico_lang') as Language;
+    if (savedCode) setCode(savedCode);
+    if (savedLang) setLanguage(savedLang);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('aico_code', code);
+    localStorage.setItem('aico_lang', language);
+  }, [code, language]);
 
   const handleProcess = async () => {
     if (!code.trim()) {
@@ -130,6 +146,12 @@ export default function App() {
         case 'TypeScript': ext = 'ts'; break;
         case 'Rust': ext = 'rs'; break;
         case 'Go': ext = 'go'; break;
+        case 'C#': ext = 'cs'; break;
+        case 'Swift': ext = 'swift'; break;
+        case 'Kotlin': ext = 'kt'; break;
+        case 'Ruby': ext = 'rb'; break;
+        case 'PHP': ext = 'php'; break;
+        case 'SQL': ext = 'sql'; break;
       }
       
       a.download = `output.${ext}`;
@@ -158,6 +180,12 @@ export default function App() {
         case 'ts': case 'tsx': setLanguage('TypeScript'); break;
         case 'rs': setLanguage('Rust'); break;
         case 'go': setLanguage('Go'); break;
+        case 'cs': setLanguage('C#'); break;
+        case 'swift': setLanguage('Swift'); break;
+        case 'kt': case 'kts': setLanguage('Kotlin'); break;
+        case 'rb': setLanguage('Ruby'); break;
+        case 'php': setLanguage('PHP'); break;
+        case 'sql': setLanguage('SQL'); break;
       }
     };
     reader.readAsText(file);
@@ -173,6 +201,12 @@ export default function App() {
       case 'TypeScript': return 'typescript';
       case 'Rust': return 'rust';
       case 'Go': return 'go';
+      case 'C#': return 'csharp';
+      case 'Swift': return 'swift';
+      case 'Kotlin': return 'kotlin';
+      case 'Ruby': return 'ruby';
+      case 'PHP': return 'php';
+      case 'SQL': return 'sql';
       default: return 'javascript';
     }
   };
@@ -182,7 +216,11 @@ export default function App() {
     explain: { icon: BookOpen, label: 'Explain', color: 'text-blue-400', bg: 'from-blue-400/20', border: 'border-blue-400/20' },
     tests: { icon: TestTube, label: 'Tests', color: 'text-purple-400', bg: 'from-purple-400/20', border: 'border-purple-400/20' },
     debug: { icon: Bug, label: 'Debug', color: 'text-red-400', bg: 'from-red-400/20', border: 'border-red-400/20' },
-    document: { icon: FileText, label: 'Document', color: 'text-amber-400', bg: 'from-amber-400/20', border: 'border-amber-400/20' }
+    document: { icon: FileText, label: 'Document', color: 'text-amber-400', bg: 'from-amber-400/20', border: 'border-amber-400/20' },
+    security: { icon: ShieldAlert, label: 'Security', color: 'text-rose-500', bg: 'from-rose-500/20', border: 'border-rose-500/20' },
+    refactor: { icon: Wand2, label: 'Refactor', color: 'text-indigo-400', bg: 'from-indigo-400/20', border: 'border-indigo-400/20' },
+    review: { icon: MessageSquare, label: 'Review', color: 'text-cyan-400', bg: 'from-cyan-400/20', border: 'border-cyan-400/20' },
+    modernize: { icon: Rocket, label: 'Modernize', color: 'text-fuchsia-400', bg: 'from-fuchsia-400/20', border: 'border-fuchsia-400/20' }
   };
 
   const CurrentIcon = actionConfig[action].icon;
@@ -223,8 +261,8 @@ export default function App() {
           </div>
           
           {/* Action Selector - Centered */}
-          <div className="flex justify-center flex-none">
-            <div className="flex ios-glass-panel rounded-full p-1 border border-white/10 shadow-inner">
+          <div className="flex justify-center flex-none max-w-[50vw] sm:max-w-none overflow-hidden">
+            <div className="flex ios-glass-panel rounded-full p-1 border border-white/10 shadow-inner overflow-x-auto custom-scrollbar">
               {(Object.keys(actionConfig) as Action[]).map((a) => {
                 const Icon = actionConfig[a].icon;
                 const isActive = action === a;
@@ -232,7 +270,7 @@ export default function App() {
                   <button
                     key={a}
                     onClick={() => setAction(a)}
-                    className={`relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-1 sm:py-1.5 text-[11px] sm:text-xs font-medium rounded-full transition-all duration-300 ${
+                    className={`relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-1 sm:py-1.5 text-[11px] sm:text-xs font-medium rounded-full transition-all duration-300 shrink-0 ${
                       isActive ? 'text-white' : 'text-neutral-500 hover:text-neutral-300'
                     }`}
                   >
@@ -274,7 +312,7 @@ export default function App() {
             </div>
             <div className="flex items-center gap-2 sm:gap-3 overflow-hidden">
               <div className="flex ios-glass-panel rounded-lg p-0.5 overflow-x-auto custom-scrollbar">
-                {(['C++', 'Python', 'Java', 'JavaScript', 'TypeScript', 'Rust', 'Go'] as Language[]).map((lang) => {
+                {(['C++', 'Python', 'Java', 'JavaScript', 'TypeScript', 'Rust', 'Go', 'C#', 'Swift', 'Kotlin', 'Ruby', 'PHP', 'SQL'] as Language[]).map((lang) => {
                   const isActive = language === lang;
                   return (
                     <button
@@ -298,10 +336,34 @@ export default function App() {
               </div>
               <div className="w-px h-4 bg-white/10 mx-0.5 sm:mx-1 shrink-0"></div>
               <div className="flex items-center gap-1 shrink-0">
+                <button
+                  onClick={() => setFontSize(f => Math.max(8, f - 1))}
+                  className="ios-glass-btn text-neutral-500 hover:text-white p-1.5 sm:p-2 rounded-lg group"
+                  title="Zoom Out"
+                >
+                  <ZoomOut className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                </button>
+                <button
+                  onClick={() => setFontSize(f => Math.min(24, f + 1))}
+                  className="ios-glass-btn text-neutral-500 hover:text-white p-1.5 sm:p-2 rounded-lg group"
+                  title="Zoom In"
+                >
+                  <ZoomIn className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                </button>
+                <div className="w-px h-4 bg-white/10 mx-0.5 sm:mx-1 shrink-0"></div>
                 <label className="ios-glass-btn text-neutral-500 hover:text-blue-400 p-1.5 sm:p-2 rounded-lg cursor-pointer group" title="Upload file">
                   <Upload className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
-                  <input type="file" className="hidden" onChange={handleFileUpload} accept=".cpp,.cc,.cxx,.h,.hpp,.py,.java,.js,.jsx,.ts,.tsx,.rs,.go,.txt" />
+                  <input type="file" className="hidden" onChange={handleFileUpload} accept=".cpp,.cc,.cxx,.h,.hpp,.py,.java,.js,.jsx,.ts,.tsx,.rs,.go,.cs,.swift,.kt,.kts,.rb,.php,.sql,.txt" />
                 </label>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(code);
+                  }}
+                  className="ios-glass-btn text-neutral-500 hover:text-emerald-400 p-1.5 sm:p-2 rounded-lg group"
+                  title="Copy code"
+                >
+                  <Copy className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                </button>
                 <button
                   onClick={() => setCode('')}
                   className="ios-glass-btn text-neutral-500 hover:text-red-400 p-1.5 sm:p-2 rounded-lg group"
@@ -314,7 +376,7 @@ export default function App() {
           </div>
 
           {/* Editor Component */}
-          <Editor code={code} setCode={setCode} language={language} actionLabel={actionConfig[action].label} />
+          <Editor code={code} setCode={setCode} language={language} actionLabel={actionConfig[action].label} fontSize={fontSize} />
 
           {/* Footer / Action Button */}
           <div className="p-2 sm:p-4 border-t border-white/5 bg-black/20 shrink-0">
@@ -424,6 +486,14 @@ export default function App() {
                         </div>
                         <div className="flex items-center gap-2">
                           <button
+                            onClick={() => setWordWrap(!wordWrap)}
+                            className={`ios-glass-btn flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-[9px] sm:text-[11px] font-mono rounded-md transition-colors shrink-0 group ${wordWrap ? 'text-white bg-white/10' : 'text-neutral-400 hover:text-white'}`}
+                            title="Toggle Word Wrap"
+                          >
+                            <AlignLeft className="w-3 h-3 sm:w-3.5 sm:h-3.5 group-hover:scale-110 transition-transform" />
+                            <span className="hidden sm:inline">Wrap</span>
+                          </button>
+                          <button
                             onClick={downloadCode}
                             className="ios-glass-btn flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-[9px] sm:text-[11px] font-mono text-neutral-400 hover:text-white rounded-md transition-colors shrink-0 group"
                             title="Download code"
@@ -447,12 +517,12 @@ export default function App() {
                         <SyntaxHighlighter
                           language={getSyntaxLanguage(language)}
                           style={vscDarkPlus}
-                          wrapLongLines={true}
+                          wrapLongLines={wordWrap}
                           customStyle={{
                             margin: 0,
                             padding: '1rem',
                             background: 'transparent',
-                            fontSize: 'inherit',
+                            fontSize: `${fontSize}px`,
                           }}
                         >
                           {result.optimizedCode}

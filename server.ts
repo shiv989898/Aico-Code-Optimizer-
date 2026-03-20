@@ -67,6 +67,46 @@ Code to document:
 ${code}
 \`\`\`
 `;
+      } else if (action === 'security') {
+        prompt = `You are an expert security researcher and software engineer.
+Perform a comprehensive security audit on the following ${language} code.
+Identify vulnerabilities (e.g., injection, XSS, memory leaks, race conditions, logic flaws) and provide secure remediation.
+
+Code to audit:
+\`\`\`${language}
+${code}
+\`\`\`
+`;
+      } else if (action === 'refactor') {
+        prompt = `You are an expert software architect and clean code advocate.
+Refactor the following ${language} code to improve its structure, readability, and maintainability.
+Apply appropriate design patterns, SOLID principles, and better naming conventions without changing the external behavior.
+
+Code to refactor:
+\`\`\`${language}
+${code}
+\`\`\`
+`;
+      } else if (action === 'review') {
+        prompt = `You are an expert Senior Software Engineer.
+Perform a thorough code review on the following ${language} code.
+Provide actionable feedback, point out anti-patterns, suggest improvements, and highlight what was done well.
+
+Code to review:
+\`\`\`${language}
+${code}
+\`\`\`
+`;
+      } else if (action === 'modernize') {
+        prompt = `You are an expert Software Engineer.
+Update the following ${language} code to use the latest language features, idioms, and best practices.
+Replace deprecated APIs, use modern syntax (e.g., ES6+ for JS, Java 17+ features, modern C++), and explain the changes made.
+
+Code to modernize:
+\`\`\`${language}
+${code}
+\`\`\`
+`;
       } else {
         prompt = `You are an expert competitive programmer and software engineer.
 Optimize the following ${language} code.
