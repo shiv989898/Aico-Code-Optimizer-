@@ -164,7 +164,7 @@ export default function App() {
         
         {/* Action Selector - Centered */}
         <div className="flex justify-center flex-none">
-          <div className="flex bg-[#0a0a0a]/80 backdrop-blur-md rounded-full p-1 border border-white/10 shadow-inner">
+          <div className="flex ios-glass-panel rounded-full p-1 border border-white/10 shadow-inner">
             {(Object.keys(actionConfig) as Action[]).map((a) => {
               const Icon = actionConfig[a].icon;
               const isActive = action === a;
@@ -179,7 +179,7 @@ export default function App() {
                   {isActive && (
                     <motion.div
                       layoutId="activeAction"
-                      className="absolute inset-0 bg-white/10 border border-white/10 rounded-full shadow-sm"
+                      className="absolute inset-0 ios-glass-btn rounded-full"
                       transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     />
                   )}
@@ -212,15 +212,15 @@ export default function App() {
               <h2 className="text-[10px] sm:text-xs font-mono text-neutral-300 uppercase tracking-wider truncate">Input Source</h2>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="flex bg-black/50 rounded-md p-0.5 border border-white/5">
+              <div className="flex ios-glass-panel rounded-lg p-0.5">
                 {(['C++', 'Python', 'Java'] as Language[]).map((lang) => (
                   <button
                     key={lang}
                     onClick={() => setLanguage(lang)}
                     className={`px-2 sm:px-3 py-1 text-[10px] sm:text-[11px] font-mono rounded transition-all ${
                       language === lang
-                        ? 'bg-white/10 text-white border border-white/5 shadow-sm'
-                        : 'text-neutral-500 hover:text-neutral-300'
+                        ? 'ios-glass-btn text-white'
+                        : 'text-neutral-500 hover:text-neutral-300 hover:bg-white/5'
                     }`}
                   >
                     {lang}
@@ -230,10 +230,10 @@ export default function App() {
               <div className="w-px h-4 bg-white/10 mx-0.5 sm:mx-1"></div>
               <button
                 onClick={() => setCode('')}
-                className="text-neutral-500 hover:text-red-400 transition-colors p-1 sm:p-1.5 rounded-md hover:bg-red-500/10"
+                className="ios-glass-btn text-neutral-500 hover:text-red-400 p-1.5 sm:p-2 rounded-lg group"
                 title="Clear code"
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                <Trash2 className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
               </button>
             </div>
           </div>
@@ -259,11 +259,15 @@ export default function App() {
             <button
               onClick={handleProcess}
               disabled={isProcessing || !code.trim()}
-              className="w-full py-2.5 sm:py-3.5 px-4 bg-white text-black disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-200 font-display font-semibold rounded-lg sm:rounded-xl transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] active:scale-[0.98] text-sm sm:text-base"
+              className={`w-full py-2.5 sm:py-3.5 px-4 font-display font-semibold rounded-xl flex items-center justify-center gap-2 text-sm sm:text-base ${
+                isProcessing || !code.trim()
+                  ? 'ios-glass-btn opacity-50 cursor-not-allowed text-neutral-400'
+                  : 'ios-glass-btn-primary'
+              }`}
             >
               {isProcessing ? (
                 <>
-                  <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                  <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                   Processing...
                 </>
               ) : (
@@ -345,12 +349,12 @@ export default function App() {
                         </div>
                         <button
                           onClick={copyToClipboard}
-                          className="flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-[9px] sm:text-[11px] font-mono text-neutral-400 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0"
+                          className="ios-glass-btn flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-[9px] sm:text-[11px] font-mono text-neutral-400 hover:text-white rounded-md transition-colors shrink-0 group"
                         >
                           {copied ? (
                             <><Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400" /> <span className="hidden sm:inline">Copied</span></>
                           ) : (
-                            <><Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">Copy</span></>
+                            <><Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5 group-hover:scale-110 transition-transform" /> <span className="hidden sm:inline">Copy</span></>
                           )}
                         </button>
                       </div>
