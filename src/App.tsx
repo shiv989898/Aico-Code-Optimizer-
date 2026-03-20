@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Code2, Zap, CheckCircle2, Activity, ChevronRight, Copy, Check, Sparkles, TerminalSquare, BookOpen, TestTube, Trash2, ArrowRight, Download, Upload, Bug, FileText, ShieldAlert, Wand2, MessageSquare, Rocket, AlignLeft, ZoomIn, ZoomOut, ChevronDown } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import MonacoEditor from '@monaco-editor/react';
 
 type Language = 'C++' | 'Python' | 'Java' | 'JavaScript' | 'TypeScript' | 'Rust' | 'Go' | 'C#' | 'Swift' | 'Kotlin' | 'Ruby' | 'PHP' | 'SQL';
 type Action = 'optimize' | 'explain' | 'tests' | 'debug' | 'document' | 'security' | 'refactor' | 'review' | 'modernize';
@@ -91,64 +92,41 @@ const Dropdown = ({ value, options, onChange, icon: Icon, align = 'left', classN
 };
 
 const Editor = ({ code, setCode, language, actionLabel, fontSize, onProcess }: { code: string, setCode: (c: string) => void, language: string, actionLabel: string, fontSize: number, onProcess: () => void }) => {
-  const lineCount = code.split('\n').length;
-  const displayLines = Math.max(10, lineCount);
-  const lines = Array.from({ length: displayLines }, (_, i) => i + 1);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const lineNumbersRef = useRef<HTMLDivElement>(null);
-  const [isFocused, setIsFocused] = useState(false);
   const [cursor, setCursor] = useState({ line: 1, col: 1 });
 
-  const handleScroll = () => {
-    if (lineNumbersRef.current && textareaRef.current) {
-      lineNumbersRef.current.scrollTop = textareaRef.current.scrollTop;
-    }
-  };
+  const handleEditorDidMount = (editor: any, monaco: any) => {
+    editor.onDidChangeCursorPosition((e: any) => {
+      setCursor({ line: e.position.lineNumber, col: e.position.column });
+    });
 
-  const updateCursor = (e: React.SyntheticEvent<HTMLTextAreaElement>) => {
-    const target = e.target as HTMLTextAreaElement;
-    const val = target.value;
-    const substr = val.substring(0, target.selectionStart);
-    const lines = substr.split('\n');
-    setCursor({ line: lines.length, col: lines[lines.length - 1].length + 1 });
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault();
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
       onProcess();
-    }
+    });
   };
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      <div className={`flex-1 flex overflow-hidden bg-black/20 relative group transition-colors duration-300 ${isFocused ? 'bg-black/40' : ''}`}>
-        <div 
-          ref={lineNumbersRef}
-          className={`w-10 sm:w-12 flex-shrink-0 bg-black/40 border-r border-white/5 text-right pr-2 sm:pr-3 py-3 sm:py-5 font-mono leading-relaxed select-none overflow-hidden transition-colors duration-300 ${isFocused ? 'text-neutral-500' : 'text-neutral-700'}`}
-          style={{ fontSize: `${fontSize}px` }}
-        >
-          {lines.map(line => (
-            <div key={line} className={line > lineCount && code !== '' ? 'opacity-0' : ''}>{line}</div>
-          ))}
-        </div>
-        <textarea
-          ref={textareaRef}
+      <div className="flex-1 relative group bg-black/20">
+        <MonacoEditor
+          height="100%"
+          language={getSyntaxLanguage(language)}
+          theme="vs-dark"
           value={code}
-          onChange={(e) => {
-            setCode(e.target.value);
-            updateCursor(e);
+          onChange={(value) => setCode(value || '')}
+          onMount={handleEditorDidMount}
+          options={{
+            minimap: { enabled: false },
+            fontSize: fontSize,
+            wordWrap: 'on',
+            padding: { top: 16 },
+            scrollBeyondLastLine: false,
+            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+            renderLineHighlight: 'all',
+            smoothScrolling: true,
+            cursorBlinking: 'smooth',
+            cursorSmoothCaretAnimation: 'on',
+            formatOnPaste: true,
           }}
-          onScroll={handleScroll}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          onKeyUp={updateCursor}
-          onClick={updateCursor}
-          onKeyDown={handleKeyDown}
-          placeholder={`// Paste your ${language} code here...\n\nfunction example() {\n  // Needs ${actionLabel.toLowerCase()}\n}`}
-          className="flex-1 bg-transparent resize-none p-3 sm:p-5 leading-relaxed font-mono text-neutral-300 placeholder:text-neutral-700 focus:outline-none custom-scrollbar whitespace-pre"
-          style={{ fontSize: `${fontSize}px` }}
-          spellCheck={false}
         />
       </div>
       {/* Editor Status Bar */}
