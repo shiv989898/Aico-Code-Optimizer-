@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Code2, Zap, CheckCircle2, Activity, ChevronRight, Copy, Check, Sparkles, TerminalSquare, BookOpen, TestTube, Trash2, ArrowRight, Download, Upload, Bug, FileText, ShieldAlert, Wand2, MessageSquare, Rocket, AlignLeft, ZoomIn, ZoomOut } from 'lucide-react';
+import { Code2, Zap, CheckCircle2, Activity, ChevronRight, Copy, Check, Sparkles, TerminalSquare, BookOpen, TestTube, Trash2, ArrowRight, Download, Upload, Bug, FileText, ShieldAlert, Wand2, MessageSquare, Rocket, AlignLeft, ZoomIn, ZoomOut, ChevronDown } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
@@ -13,13 +13,14 @@ interface OptimizationResult {
   complexityAnalysis: string;
 }
 
-const Editor = ({ code, setCode, language, actionLabel, fontSize }: { code: string, setCode: (c: string) => void, language: string, actionLabel: string, fontSize: number }) => {
+const Editor = ({ code, setCode, language, actionLabel, fontSize, onProcess }: { code: string, setCode: (c: string) => void, language: string, actionLabel: string, fontSize: number, onProcess: () => void }) => {
   const lineCount = code.split('\n').length;
   const displayLines = Math.max(10, lineCount);
   const lines = Array.from({ length: displayLines }, (_, i) => i + 1);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lineNumbersRef = useRef<HTMLDivElement>(null);
   const [isFocused, setIsFocused] = useState(false);
+  const [cursor, setCursor] = useState({ line: 1, col: 1 });
 
   const handleScroll = () => {
     if (lineNumbersRef.current && textareaRef.current) {
@@ -27,29 +28,64 @@ const Editor = ({ code, setCode, language, actionLabel, fontSize }: { code: stri
     }
   };
 
+  const updateCursor = (e: React.SyntheticEvent<HTMLTextAreaElement>) => {
+    const target = e.target as HTMLTextAreaElement;
+    const val = target.value;
+    const substr = val.substring(0, target.selectionStart);
+    const lines = substr.split('\n');
+    setCursor({ line: lines.length, col: lines[lines.length - 1].length + 1 });
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      onProcess();
+    }
+  };
+
   return (
-    <div className={`flex-1 flex overflow-hidden bg-black/20 relative group min-h-0 transition-colors duration-300 ${isFocused ? 'bg-black/40' : ''}`}>
-      <div 
-        ref={lineNumbersRef}
-        className={`w-10 sm:w-12 flex-shrink-0 bg-black/40 border-r border-white/5 text-right pr-2 sm:pr-3 py-3 sm:py-5 font-mono leading-relaxed select-none overflow-hidden transition-colors duration-300 ${isFocused ? 'text-neutral-500' : 'text-neutral-700'}`}
-        style={{ fontSize: `${fontSize}px` }}
-      >
-        {lines.map(line => (
-          <div key={line} className={line > lineCount && code !== '' ? 'opacity-0' : ''}>{line}</div>
-        ))}
+    <div className="flex-1 flex flex-col min-h-0">
+      <div className={`flex-1 flex overflow-hidden bg-black/20 relative group transition-colors duration-300 ${isFocused ? 'bg-black/40' : ''}`}>
+        <div 
+          ref={lineNumbersRef}
+          className={`w-10 sm:w-12 flex-shrink-0 bg-black/40 border-r border-white/5 text-right pr-2 sm:pr-3 py-3 sm:py-5 font-mono leading-relaxed select-none overflow-hidden transition-colors duration-300 ${isFocused ? 'text-neutral-500' : 'text-neutral-700'}`}
+          style={{ fontSize: `${fontSize}px` }}
+        >
+          {lines.map(line => (
+            <div key={line} className={line > lineCount && code !== '' ? 'opacity-0' : ''}>{line}</div>
+          ))}
+        </div>
+        <textarea
+          ref={textareaRef}
+          value={code}
+          onChange={(e) => {
+            setCode(e.target.value);
+            updateCursor(e);
+          }}
+          onScroll={handleScroll}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          onKeyUp={updateCursor}
+          onClick={updateCursor}
+          onKeyDown={handleKeyDown}
+          placeholder={`// Paste your ${language} code here...\n\nfunction example() {\n  // Needs ${actionLabel.toLowerCase()}\n}`}
+          className="flex-1 bg-transparent resize-none p-3 sm:p-5 leading-relaxed font-mono text-neutral-300 placeholder:text-neutral-700 focus:outline-none custom-scrollbar whitespace-pre"
+          style={{ fontSize: `${fontSize}px` }}
+          spellCheck={false}
+        />
       </div>
-      <textarea
-        ref={textareaRef}
-        value={code}
-        onChange={(e) => setCode(e.target.value)}
-        onScroll={handleScroll}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        placeholder={`// Paste your ${language} code here...\n\nfunction example() {\n  // Needs ${actionLabel.toLowerCase()}\n}`}
-        className="flex-1 bg-transparent resize-none p-3 sm:p-5 leading-relaxed font-mono text-neutral-300 placeholder:text-neutral-700 focus:outline-none custom-scrollbar whitespace-pre"
-        style={{ fontSize: `${fontSize}px` }}
-        spellCheck={false}
-      />
+      {/* Editor Status Bar */}
+      <div className="h-6 sm:h-7 bg-black/40 border-t border-white/5 flex items-center justify-between px-3 sm:px-4 text-[9px] sm:text-[10px] font-mono text-neutral-500 shrink-0">
+        <div className="flex items-center gap-4">
+          <span>{code.length} chars</span>
+          <span>{code.split('\n').length} lines</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <span>Ln {cursor.line}, Col {cursor.col}</span>
+          <span>UTF-8</span>
+          <span className="text-neutral-400">{language}</span>
+        </div>
+      </div>
     </div>
   );
 };
@@ -62,8 +98,11 @@ export default function App() {
   const [result, setResult] = useState<OptimizationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [inputCopied, setInputCopied] = useState(false);
   const [wordWrap, setWordWrap] = useState(true);
   const [fontSize, setFontSize] = useState(13);
+  const [isAnalysisOpen, setIsAnalysisOpen] = useState(true);
+  const [isKeyPointsOpen, setIsKeyPointsOpen] = useState(true);
 
   useEffect(() => {
     const savedCode = localStorage.getItem('aico_code');
@@ -358,11 +397,17 @@ export default function App() {
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(code);
+                    setInputCopied(true);
+                    setTimeout(() => setInputCopied(false), 2000);
                   }}
                   className="ios-glass-btn text-neutral-500 hover:text-emerald-400 p-1.5 sm:p-2 rounded-lg group"
                   title="Copy code"
                 >
-                  <Copy className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                  {inputCopied ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                  )}
                 </button>
                 <button
                   onClick={() => setCode('')}
@@ -376,7 +421,7 @@ export default function App() {
           </div>
 
           {/* Editor Component */}
-          <Editor code={code} setCode={setCode} language={language} actionLabel={actionConfig[action].label} fontSize={fontSize} />
+          <Editor code={code} setCode={setCode} language={language} actionLabel={actionConfig[action].label} fontSize={fontSize} onProcess={handleProcess} />
 
           {/* Footer / Action Button */}
           <div className="p-2 sm:p-4 border-t border-white/5 bg-black/20 shrink-0">
@@ -446,6 +491,10 @@ export default function App() {
                   <p className="font-sans text-[10px] sm:text-xs text-neutral-500 mt-2 max-w-[250px] text-center px-4 hidden sm:block">
                     Enter your code in the left pane and click process to see the magic happen.
                   </p>
+                  <div className="mt-6 flex items-center gap-2 text-[10px] sm:text-xs font-mono text-neutral-600 bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
+                    <Sparkles className="w-3 h-3" />
+                    <span>Pro tip: Press <kbd className="bg-black/40 px-1.5 py-0.5 rounded border border-white/10 mx-1 text-neutral-400">Cmd/Ctrl + Enter</kbd> to run</span>
+                  </div>
                 </motion.div>
               ) : isProcessing ? (
                 <motion.div
@@ -533,32 +582,72 @@ export default function App() {
 
                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 sm:gap-6 shrink-0">
                     {/* Analysis */}
-                    <motion.div variants={itemVariants} className="rounded-xl ios-glass-panel p-3 sm:p-6 relative overflow-hidden">
-                      <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${actionConfig[action].bg} to-transparent opacity-20 blur-2xl rounded-full transform translate-x-1/2 -translate-y-1/2`}></div>
-                      <h3 className="text-[9px] sm:text-[11px] font-mono text-neutral-500 uppercase tracking-widest mb-2 sm:mb-4 flex items-center gap-2 relative z-10">
-                        <Activity className={`w-3 h-3 sm:w-4 sm:h-4 ${actionConfig[action].color}`} />
-                        Analysis
-                      </h3>
-                      <p className="text-[11px] sm:text-[13px] text-neutral-300 leading-relaxed font-sans relative z-10">
-                        {result.complexityAnalysis}
-                      </p>
+                    <motion.div variants={itemVariants} className="rounded-xl ios-glass-panel overflow-hidden flex flex-col">
+                      <button 
+                        onClick={() => setIsAnalysisOpen(!isAnalysisOpen)}
+                        className="w-full flex items-center justify-between p-3 sm:p-4 hover:bg-white/5 transition-colors relative z-10"
+                      >
+                        <h3 className="text-[9px] sm:text-[11px] font-mono text-neutral-500 uppercase tracking-widest flex items-center gap-2">
+                          <Activity className={`w-3 h-3 sm:w-4 sm:h-4 ${actionConfig[action].color}`} />
+                          Analysis
+                        </h3>
+                        <ChevronDown className={`w-3.5 h-3.5 text-neutral-500 transition-transform duration-300 ${isAnalysisOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      <AnimatePresence initial={false}>
+                        {isAnalysisOpen && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.3, ease: "easeInOut" }}
+                            className="relative"
+                          >
+                            <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${actionConfig[action].bg} to-transparent opacity-20 blur-2xl rounded-full transform translate-x-1/2 -translate-y-1/2 pointer-events-none`}></div>
+                            <div className="px-3 sm:px-6 pb-3 sm:pb-6 pt-1">
+                              <p className="text-[11px] sm:text-[13px] text-neutral-300 leading-relaxed font-sans relative z-10">
+                                {result.complexityAnalysis}
+                              </p>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </motion.div>
 
                     {/* Key Points List */}
-                    <motion.div variants={itemVariants} className="rounded-xl ios-glass-panel p-3 sm:p-6 relative overflow-hidden">
-                      <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${actionConfig[action].bg} to-transparent opacity-20 blur-2xl rounded-full transform translate-x-1/2 -translate-y-1/2`}></div>
-                      <h3 className="text-[9px] sm:text-[11px] font-mono text-neutral-500 uppercase tracking-widest mb-2 sm:mb-4 flex items-center gap-2 relative z-10">
-                        <CheckCircle2 className={`w-3 h-3 sm:w-4 sm:h-4 ${actionConfig[action].color}`} />
-                        Key Points
-                      </h3>
-                      <ul className="space-y-1 sm:space-y-2 relative z-10">
-                        {result.improvements.map((improvement, index) => (
-                          <li key={index} className="flex items-start gap-2 sm:gap-3 text-[11px] sm:text-[13px] text-neutral-300 font-sans p-2 rounded-lg hover:bg-white/5 transition-colors">
-                            <ChevronRight className={`w-3 h-3 sm:w-4 sm:h-4 ${actionConfig[action].color} opacity-70 shrink-0 mt-0.5`} />
-                            <span className="leading-relaxed">{improvement}</span>
-                          </li>
-                        ))}
-                      </ul>
+                    <motion.div variants={itemVariants} className="rounded-xl ios-glass-panel overflow-hidden flex flex-col">
+                      <button 
+                        onClick={() => setIsKeyPointsOpen(!isKeyPointsOpen)}
+                        className="w-full flex items-center justify-between p-3 sm:p-4 hover:bg-white/5 transition-colors relative z-10"
+                      >
+                        <h3 className="text-[9px] sm:text-[11px] font-mono text-neutral-500 uppercase tracking-widest flex items-center gap-2">
+                          <CheckCircle2 className={`w-3 h-3 sm:w-4 sm:h-4 ${actionConfig[action].color}`} />
+                          Key Points
+                        </h3>
+                        <ChevronDown className={`w-3.5 h-3.5 text-neutral-500 transition-transform duration-300 ${isKeyPointsOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      <AnimatePresence initial={false}>
+                        {isKeyPointsOpen && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.3, ease: "easeInOut" }}
+                            className="relative"
+                          >
+                            <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${actionConfig[action].bg} to-transparent opacity-20 blur-2xl rounded-full transform translate-x-1/2 -translate-y-1/2 pointer-events-none`}></div>
+                            <div className="px-3 sm:px-6 pb-3 sm:pb-6 pt-1">
+                              <ul className="space-y-1 sm:space-y-2 relative z-10">
+                                {result.improvements.map((improvement, index) => (
+                                  <li key={index} className="flex items-start gap-2 sm:gap-3 text-[11px] sm:text-[13px] text-neutral-300 font-sans p-2 rounded-lg hover:bg-white/5 transition-colors">
+                                    <ChevronRight className={`w-3 h-3 sm:w-4 sm:h-4 ${actionConfig[action].color} opacity-70 shrink-0 mt-0.5`} />
+                                    <span className="leading-relaxed">{improvement}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </motion.div>
                   </div>
                 </motion.div>
