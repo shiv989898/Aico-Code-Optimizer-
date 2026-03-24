@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-dotenv.config({ override: true });
+dotenv.config();
 import express from "express";
 import { GoogleGenAI, Type } from "@google/genai";
 
@@ -15,11 +15,12 @@ app.post("/api/optimize", async (req, res) => {
       return res.status(400).json({ error: "Files are required" });
     }
 
-    if (!process.env.GEMINI_API_KEY) {
-      return res.status(500).json({ error: "GEMINI_API_KEY is missing. Please configure it in the AI Studio Secrets panel." });
+    if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'undefined' || process.env.GEMINI_API_KEY === 'your_actual_api_key_here') {
+      return res.status(500).json({ error: "GEMINI_API_KEY is missing or invalid. Please configure it in the AI Studio Secrets panel or your .env file." });
     }
 
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const apiKey = process.env.GEMINI_API_KEY.trim().replace(/^["']|["']$/g, '');
+    const ai = new GoogleGenAI({ apiKey });
 
     const filesContext = files.map((f: any) => `File: ${f.name} (${f.language})\n\`\`\`${f.language}\n${f.code}\n\`\`\``).join('\n\n');
 
@@ -115,7 +116,7 @@ ${filesContext}
     }
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-lite",
+      model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
