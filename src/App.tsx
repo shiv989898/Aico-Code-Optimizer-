@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Code2, Zap, CheckCircle2, Activity, ChevronRight, Copy, Check, Sparkles, TerminalSquare, BookOpen, TestTube, Trash2, ArrowRight, Download, Upload, Bug, FileText, ShieldAlert, Wand2, MessageSquare, Rocket, AlignLeft, ZoomIn, ZoomOut, ChevronDown, Plus, X, FileCode2 } from 'lucide-react';
+import { Code2, Zap, CheckCircle2, Activity, ChevronRight, Copy, Check, Sparkles, TerminalSquare, BookOpen, TestTube, Trash2, ArrowRight, Download, Upload, Bug, FileText, ShieldAlert, Wand2, MessageSquare, Rocket, AlignLeft, ZoomIn, ZoomOut, ChevronDown, Plus, X, FileCode2, Play } from 'lucide-react';
 import MonacoEditor from '@monaco-editor/react';
 
 type Language = 'C++' | 'Python' | 'Java' | 'JavaScript' | 'TypeScript' | 'Rust' | 'Go' | 'C#' | 'Swift' | 'Kotlin' | 'Ruby' | 'PHP' | 'SQL';
-type Action = 'optimize' | 'explain' | 'tests' | 'debug' | 'document' | 'security' | 'refactor' | 'review' | 'modernize';
+type Action = 'optimize' | 'explain' | 'tests' | 'debug' | 'document' | 'security' | 'refactor' | 'review' | 'modernize' | 'run';
 
 interface OptimizationResult {
   optimizedCode: string;
@@ -312,20 +312,24 @@ export default function App() {
       a.href = url;
       
       let ext = 'txt';
-      switch (activeFile.language) {
-        case 'C++': ext = 'cpp'; break;
-        case 'Python': ext = 'py'; break;
-        case 'Java': ext = 'java'; break;
-        case 'JavaScript': ext = 'js'; break;
-        case 'TypeScript': ext = 'ts'; break;
-        case 'Rust': ext = 'rs'; break;
-        case 'Go': ext = 'go'; break;
-        case 'C#': ext = 'cs'; break;
-        case 'Swift': ext = 'swift'; break;
-        case 'Kotlin': ext = 'kt'; break;
-        case 'Ruby': ext = 'rb'; break;
-        case 'PHP': ext = 'php'; break;
-        case 'SQL': ext = 'sql'; break;
+      if (action === 'run') {
+        ext = 'out';
+      } else {
+        switch (activeFile.language) {
+          case 'C++': ext = 'cpp'; break;
+          case 'Python': ext = 'py'; break;
+          case 'Java': ext = 'java'; break;
+          case 'JavaScript': ext = 'js'; break;
+          case 'TypeScript': ext = 'ts'; break;
+          case 'Rust': ext = 'rs'; break;
+          case 'Go': ext = 'go'; break;
+          case 'C#': ext = 'cs'; break;
+          case 'Swift': ext = 'swift'; break;
+          case 'Kotlin': ext = 'kt'; break;
+          case 'Ruby': ext = 'rb'; break;
+          case 'PHP': ext = 'php'; break;
+          case 'SQL': ext = 'sql'; break;
+        }
       }
       
       a.download = `output.${ext}`;
@@ -371,6 +375,7 @@ export default function App() {
   };
 
   const actionConfig = {
+    run: { icon: Play, label: 'Run', color: 'text-green-400', bg: 'from-green-400/20', border: 'border-green-400/20' },
     optimize: { icon: Zap, label: 'Optimize', color: 'text-emerald-400', bg: 'from-emerald-400/20', border: 'border-emerald-400/20' },
     explain: { icon: BookOpen, label: 'Explain', color: 'text-blue-400', bg: 'from-blue-400/20', border: 'border-blue-400/20' },
     tests: { icon: TestTube, label: 'Tests', color: 'text-purple-400', bg: 'from-purple-400/20', border: 'border-purple-400/20' },
@@ -625,7 +630,7 @@ export default function App() {
             <div className="flex items-center">
               <div className="flex items-center gap-2 px-4 py-2.5 bg-black/40 border-t-2 border-t-emerald-500 text-neutral-200">
                 <Activity className={`w-3.5 h-3.5 ${actionConfig[action].color} shrink-0`} />
-                <h2 className="text-[11px] sm:text-xs font-mono">output.md</h2>
+                <h2 className="text-[11px] sm:text-xs font-mono">{action === 'run' ? 'terminal.out' : 'output.md'}</h2>
               </div>
             </div>
             {result && (
@@ -697,7 +702,9 @@ export default function App() {
                           <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-red-500/20 border border-red-500/50"></div>
                           <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-yellow-500/20 border border-yellow-500/50"></div>
                           <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-green-500/20 border border-green-500/50"></div>
-                          <span className="ml-2 sm:ml-3 text-[9px] sm:text-[10px] font-mono text-neutral-500 uppercase tracking-widest truncate">output.{getExtensionForLanguage(activeFile.language)}</span>
+                          <span className="ml-2 sm:ml-3 text-[9px] sm:text-[10px] font-mono text-neutral-500 uppercase tracking-widest truncate">
+                            {action === 'run' ? 'terminal.out' : `output.${getExtensionForLanguage(activeFile.language)}`}
+                          </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <button
@@ -732,7 +739,7 @@ export default function App() {
                       <div className="text-[11px] sm:text-[13px] leading-relaxed font-mono bg-black/20 overflow-hidden h-[40vh] sm:h-[50vh]">
                         <MonacoEditor
                           height="100%"
-                          language={getSyntaxLanguage(activeFile.language)}
+                          language={action === 'run' ? 'shell' : getSyntaxLanguage(activeFile.language)}
                           theme="aico-dark"
                           value={result.optimizedCode}
                           options={{

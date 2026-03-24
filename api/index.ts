@@ -24,7 +24,21 @@ app.post("/api/optimize", async (req, res) => {
     const filesContext = files.map((f: any) => `File: ${f.name} (${f.language})\n\`\`\`${f.language}\n${f.code}\n\`\`\``).join('\n\n');
 
     let prompt = "";
-    if (action === 'explain') {
+    if (action === 'run') {
+      prompt = `You are an expert code execution engine.
+Simulate the execution of the following code and provide the standard output, standard error, and exit code. 
+If the code requires input, assume standard typical inputs or none.
+Do not explain the code, just provide the output as if it were run in a terminal.
+
+For the JSON response:
+- "optimizedCode": Put the exact standard output and standard error here.
+- "improvements": Put a list of execution steps or "Execution successful" / "Execution failed".
+- "complexityAnalysis": Put the exit code and execution time estimate here.
+
+Code to execute:
+${filesContext}
+`;
+    } else if (action === 'explain') {
       prompt = `You are an expert software engineer.
 Explain the following code step-by-step. The code may be split across multiple files.
 Focus on what the code does, its logic, and any potential edge cases.
