@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Code2, Zap, CheckCircle2, Activity, ChevronRight, Copy, Check, Sparkles, TerminalSquare, BookOpen, TestTube, Trash2, ArrowRight, Download, Upload, Bug, FileText, ShieldAlert, Wand2, MessageSquare, Rocket, AlignLeft, ZoomIn, ZoomOut, ChevronDown } from 'lucide-react';
+import { Code2, Zap, CheckCircle2, Activity, ChevronRight, Copy, Check, Sparkles, TerminalSquare, BookOpen, TestTube, Trash2, ArrowRight, Download, Upload, Bug, FileText, ShieldAlert, Wand2, MessageSquare, Rocket, AlignLeft, ZoomIn, ZoomOut, ChevronDown, Plus, X, FileCode2 } from 'lucide-react';
 import MonacoEditor from '@monaco-editor/react';
 
 type Language = 'C++' | 'Python' | 'Java' | 'JavaScript' | 'TypeScript' | 'Rust' | 'Go' | 'C#' | 'Swift' | 'Kotlin' | 'Ruby' | 'PHP' | 'SQL';
@@ -11,6 +11,32 @@ interface OptimizationResult {
   improvements: string[];
   complexityAnalysis: string;
 }
+
+interface CodeFile {
+  id: string;
+  name: string;
+  code: string;
+  language: Language;
+}
+
+const getExtensionForLanguage = (lang: Language) => {
+  switch (lang) {
+    case 'C++': return 'cpp';
+    case 'Python': return 'py';
+    case 'Java': return 'java';
+    case 'JavaScript': return 'js';
+    case 'TypeScript': return 'ts';
+    case 'Rust': return 'rs';
+    case 'Go': return 'go';
+    case 'C#': return 'cs';
+    case 'Swift': return 'swift';
+    case 'Kotlin': return 'kt';
+    case 'Ruby': return 'rb';
+    case 'PHP': return 'php';
+    case 'SQL': return 'sql';
+    default: return 'txt';
+  }
+};
 
 const getSyntaxLanguage = (lang: Language) => {
   switch (lang) {
@@ -167,8 +193,8 @@ const Editor = ({ code, setCode, language, actionLabel, fontSize, onProcess }: {
 };
 
 export default function App() {
-  const [code, setCode] = useState('');
-  const [language, setLanguage] = useState<Language>('C++');
+  const [files, setFiles] = useState<CodeFile[]>([{ id: '1', name: 'main.cpp', code: '', language: 'C++' }]);
+  const [activeFileId, setActiveFileId] = useState<string>('1');
   const [action, setAction] = useState<Action>('optimize');
   const [isProcessing, setIsProcessing] = useState(false);
   const [result, setResult] = useState<OptimizationResult | null>(null);
@@ -180,20 +206,53 @@ export default function App() {
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(true);
   const [isKeyPointsOpen, setIsKeyPointsOpen] = useState(true);
 
+  const activeFile = files.find(f => f.id === activeFileId) || files[0];
+
   useEffect(() => {
-    const savedCode = localStorage.getItem('aico_code');
-    const savedLang = localStorage.getItem('aico_lang') as Language;
-    if (savedCode) setCode(savedCode);
-    if (savedLang) setLanguage(savedLang);
+    const savedFiles = localStorage.getItem('aico_files');
+    const savedActiveId = localStorage.getItem('aico_active_file');
+    if (savedFiles) {
+      try {
+        setFiles(JSON.parse(savedFiles));
+      } catch (e) {
+        console.error('Failed to parse saved files');
+      }
+    }
+    if (savedActiveId) setActiveFileId(savedActiveId);
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('aico_code', code);
-    localStorage.setItem('aico_lang', language);
-  }, [code, language]);
+    localStorage.setItem('aico_files', JSON.stringify(files));
+    localStorage.setItem('aico_active_file', activeFileId);
+  }, [files, activeFileId]);
+
+  const setCode = (newCode: string) => {
+    setFiles(files.map(f => f.id === activeFileId ? { ...f, code: newCode } : f));
+  };
+
+  const setLanguage = (newLang: Language) => {
+    const ext = getExtensionForLanguage(newLang);
+    setFiles(files.map(f => f.id === activeFileId ? { ...f, language: newLang, name: f.name.replace(/\.[^/.]+$/, "") + '.' + ext } : f));
+  };
+
+  const addFile = () => {
+    const newId = Math.random().toString(36).substring(7);
+    setFiles([...files, { id: newId, name: `file${files.length + 1}.cpp`, code: '', language: 'C++' }]);
+    setActiveFileId(newId);
+  };
+
+  const removeFile = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (files.length === 1) return;
+    const newFiles = files.filter(f => f.id !== id);
+    setFiles(newFiles);
+    if (activeFileId === id) {
+      setActiveFileId(newFiles[0].id);
+    }
+  };
 
   const handleProcess = async () => {
-    if (!code.trim()) {
+    if (files.every(f => !f.code.trim())) {
       setError('Please enter some code first.');
       return;
     }
@@ -208,7 +267,7 @@ export default function App() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ code, language, action }),
+        body: JSON.stringify({ files, action }),
       });
 
       const text = await response.text();
@@ -253,7 +312,7 @@ export default function App() {
       a.href = url;
       
       let ext = 'txt';
-      switch (language) {
+      switch (activeFile.language) {
         case 'C++': ext = 'cpp'; break;
         case 'Python': ext = 'py'; break;
         case 'Java': ext = 'java'; break;
@@ -284,24 +343,28 @@ export default function App() {
     const reader = new FileReader();
     reader.onload = (event) => {
       const content = event.target?.result as string;
-      setCode(content);
       
+      let newLang: Language = 'JavaScript';
       const ext = file.name.split('.').pop()?.toLowerCase();
       switch (ext) {
-        case 'cpp': case 'cc': case 'cxx': case 'h': case 'hpp': setLanguage('C++'); break;
-        case 'py': setLanguage('Python'); break;
-        case 'java': setLanguage('Java'); break;
-        case 'js': case 'jsx': setLanguage('JavaScript'); break;
-        case 'ts': case 'tsx': setLanguage('TypeScript'); break;
-        case 'rs': setLanguage('Rust'); break;
-        case 'go': setLanguage('Go'); break;
-        case 'cs': setLanguage('C#'); break;
-        case 'swift': setLanguage('Swift'); break;
-        case 'kt': case 'kts': setLanguage('Kotlin'); break;
-        case 'rb': setLanguage('Ruby'); break;
-        case 'php': setLanguage('PHP'); break;
-        case 'sql': setLanguage('SQL'); break;
+        case 'cpp': case 'cc': case 'cxx': case 'h': case 'hpp': newLang = 'C++'; break;
+        case 'py': newLang = 'Python'; break;
+        case 'java': newLang = 'Java'; break;
+        case 'js': case 'jsx': newLang = 'JavaScript'; break;
+        case 'ts': case 'tsx': newLang = 'TypeScript'; break;
+        case 'rs': newLang = 'Rust'; break;
+        case 'go': newLang = 'Go'; break;
+        case 'cs': newLang = 'C#'; break;
+        case 'swift': newLang = 'Swift'; break;
+        case 'kt': case 'kts': newLang = 'Kotlin'; break;
+        case 'rb': newLang = 'Ruby'; break;
+        case 'php': newLang = 'PHP'; break;
+        case 'sql': newLang = 'SQL'; break;
       }
+
+      const newId = Math.random().toString(36).substring(7);
+      setFiles([...files, { id: newId, name: file.name, code: content, language: newLang }]);
+      setActiveFileId(newId);
     };
     reader.readAsText(file);
     e.target.value = '';
@@ -394,17 +457,72 @@ export default function App() {
         
         {/* Left Pane: Editor */}
         <section className="flex-1 lg:w-1/2 flex flex-col rounded-xl sm:rounded-2xl bg-black/40 border border-white/10 overflow-hidden relative group min-h-0 shadow-2xl backdrop-blur-xl">
+          {/* File Tabs */}
+          <div className="flex items-center gap-1 px-2 pt-2 bg-black/60 border-b border-white/5 overflow-x-auto custom-scrollbar shrink-0">
+            {files.map(f => (
+              <div
+                key={f.id}
+                onClick={() => setActiveFileId(f.id)}
+                className={`group flex items-center gap-2 px-3 py-1.5 rounded-t-lg text-[11px] sm:text-xs font-mono transition-colors min-w-[100px] max-w-[200px] cursor-pointer ${
+                  activeFileId === f.id 
+                    ? 'bg-black/40 text-blue-400 border-t-2 border-t-blue-500' 
+                    : 'text-neutral-500 hover:bg-white/5 hover:text-neutral-300'
+                }`}
+              >
+                <FileCode2 className="w-3.5 h-3.5 shrink-0" />
+                <span 
+                  className="truncate flex-1 text-left outline-none cursor-text"
+                  contentEditable={activeFileId === f.id}
+                  suppressContentEditableWarning
+                  onBlur={(e) => {
+                    const newName = e.currentTarget.textContent || f.name;
+                    if (newName.trim()) {
+                      setFiles(files.map(file => file.id === f.id ? { ...file, name: newName } : file));
+                    } else {
+                      e.currentTarget.textContent = f.name;
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      e.currentTarget.blur();
+                    }
+                  }}
+                >
+                  {f.name}
+                </span>
+                {files.length > 1 && (
+                  <div 
+                    onClick={(e) => removeFile(f.id, e)}
+                    className={`w-4 h-4 rounded flex items-center justify-center shrink-0 transition-colors ${
+                      activeFileId === f.id ? 'hover:bg-blue-500/20 text-blue-400' : 'opacity-0 group-hover:opacity-100 hover:bg-white/10 text-neutral-400'
+                    }`}
+                  >
+                    <X className="w-3 h-3" />
+                  </div>
+                )}
+              </div>
+            ))}
+            <button
+              onClick={addFile}
+              className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-white/10 transition-colors ml-1 mb-1"
+              title="Add File"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
+
           {/* Header */}
           <div className="flex items-center justify-between bg-black/40 border-b border-white/10 shrink-0 relative z-20">
             <div className="flex items-center">
-              <div className="flex items-center gap-2 px-4 py-2.5 bg-black/40 border-t-2 border-t-blue-500 text-neutral-200">
+              <div className="flex items-center gap-2 px-4 py-2.5 text-neutral-200">
                 <TerminalSquare className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                <h2 className="text-[11px] sm:text-xs font-mono">input.{getSyntaxLanguage(language)}</h2>
+                <h2 className="text-[11px] sm:text-xs font-mono">{activeFile.name}</h2>
               </div>
             </div>
             <div className="flex items-center gap-2 sm:gap-3 px-3">
               <Dropdown 
-                value={language} 
+                value={activeFile.language} 
                 options={languageOptions} 
                 onChange={(val: Language) => setLanguage(val)} 
                 align="right"
@@ -433,7 +551,7 @@ export default function App() {
                 </label>
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(code);
+                    navigator.clipboard.writeText(activeFile.code);
                     setInputCopied(true);
                     setTimeout(() => setInputCopied(false), 2000);
                   }}
@@ -458,7 +576,7 @@ export default function App() {
           </div>
 
           {/* Editor Component */}
-          <Editor code={code} setCode={setCode} language={language} actionLabel={actionConfig[action].label} fontSize={fontSize} onProcess={handleProcess} />
+          <Editor code={activeFile.code} setCode={setCode} language={activeFile.language} actionLabel={actionConfig[action].label} fontSize={fontSize} onProcess={handleProcess} />
 
           {/* Footer / Action Button */}
           <div className="p-2 sm:p-4 border-t border-white/5 bg-black/20 shrink-0">
@@ -477,9 +595,9 @@ export default function App() {
             </AnimatePresence>
             <button
               onClick={handleProcess}
-              disabled={isProcessing || !code.trim()}
+              disabled={isProcessing || files.every(f => !f.code.trim())}
               className={`w-full py-2.5 sm:py-3.5 px-4 font-display font-semibold rounded-xl flex items-center justify-center gap-2 text-sm sm:text-base ${
-                isProcessing || !code.trim()
+                isProcessing || files.every(f => !f.code.trim())
                   ? 'ios-glass-btn opacity-50 cursor-not-allowed text-neutral-400'
                   : 'ios-glass-btn-primary'
               }`}
@@ -579,7 +697,7 @@ export default function App() {
                           <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-red-500/20 border border-red-500/50"></div>
                           <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-yellow-500/20 border border-yellow-500/50"></div>
                           <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-green-500/20 border border-green-500/50"></div>
-                          <span className="ml-2 sm:ml-3 text-[9px] sm:text-[10px] font-mono text-neutral-500 uppercase tracking-widest truncate">output.{getSyntaxLanguage(language)}</span>
+                          <span className="ml-2 sm:ml-3 text-[9px] sm:text-[10px] font-mono text-neutral-500 uppercase tracking-widest truncate">output.{getExtensionForLanguage(activeFile.language)}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <button
@@ -614,7 +732,7 @@ export default function App() {
                       <div className="text-[11px] sm:text-[13px] leading-relaxed font-mono bg-black/20 overflow-hidden h-[40vh] sm:h-[50vh]">
                         <MonacoEditor
                           height="100%"
-                          language={getSyntaxLanguage(language)}
+                          language={getSyntaxLanguage(activeFile.language)}
                           theme="aico-dark"
                           value={result.optimizedCode}
                           options={{
