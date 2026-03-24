@@ -456,7 +456,7 @@ export default function App() {
       <main className="flex-1 flex flex-col lg:flex-row w-full max-w-[1800px] mx-auto p-2 sm:p-4 lg:p-6 gap-2 sm:gap-4 lg:gap-6 relative z-10 overflow-hidden">
         
         {/* Left Pane: Editor */}
-        <section className="flex-1 lg:w-1/2 flex flex-col rounded-xl sm:rounded-2xl bg-black/40 border border-white/10 overflow-hidden relative group min-h-0 shadow-2xl backdrop-blur-xl">
+        <section className="flex-1 lg:w-1/2 flex flex-col rounded-xl sm:rounded-2xl bg-black/40 border border-white/10 overflow-hidden relative min-h-0 shadow-2xl backdrop-blur-xl">
           {/* File Tabs */}
           <div className="flex items-center gap-1 px-2 pt-2 bg-black/60 border-b border-white/5 overflow-x-auto custom-scrollbar shrink-0">
             {files.map(f => (
