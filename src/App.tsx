@@ -115,7 +115,7 @@ const Dropdown = ({ value, options, onChange, icon: Icon, align = 'left', classN
   );
 };
 
-const Editor = ({ code, setCode, language, actionLabel, fontSize, onProcess }: { code: string, setCode: (c: string) => void, language: string, actionLabel: string, fontSize: number, onProcess: () => void }) => {
+const Editor = ({ code, setCode, language, actionLabel, fontSize, onProcess }: { code: string, setCode: (c: string) => void, language: Language, actionLabel: string, fontSize: number, onProcess: () => void }) => {
   const [cursor, setCursor] = useState({ line: 1, col: 1 });
 
   const handleEditorWillMount = (monaco: any) => {
