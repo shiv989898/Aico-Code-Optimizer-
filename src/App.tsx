@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Code2, Zap, CheckCircle2, Activity, ChevronRight, Copy, Check, Sparkles, TerminalSquare, BookOpen, TestTube, Trash2, ArrowRight, Download, Upload, Bug, FileText, ShieldAlert, Wand2, MessageSquare, Rocket, AlignLeft, ZoomIn, ZoomOut, ChevronDown, Plus, X, FileCode2, Play } from 'lucide-react';
-import MonacoEditor from '@monaco-editor/react';
+import MonacoEditor, { DiffEditor } from '@monaco-editor/react';
+import { Toaster, toast } from 'sonner';
 
 type Language = 'C++' | 'Python' | 'Java' | 'JavaScript' | 'TypeScript' | 'Rust' | 'Go' | 'C#' | 'Swift' | 'Kotlin' | 'Ruby' | 'PHP' | 'SQL';
 type Action = 'optimize' | 'explain' | 'tests' | 'debug' | 'document' | 'security' | 'refactor' | 'review' | 'modernize' | 'run';
@@ -205,6 +206,8 @@ export default function App() {
   const [fontSize, setFontSize] = useState(13);
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(true);
   const [isKeyPointsOpen, setIsKeyPointsOpen] = useState(true);
+  const [viewMode, setViewMode] = useState<'code' | 'diff'>('code');
+  const [isDragging, setIsDragging] = useState(false);
 
   const activeFile = files.find(f => f.id === activeFileId) || files[0];
 
@@ -290,7 +293,9 @@ export default function App() {
         throw new Error(`Invalid response format: ${text.slice(0, 50)}...`);
       }
     } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred.');
+      const msg = err.message || 'An unexpected error occurred.';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsProcessing(false);
     }
@@ -300,6 +305,7 @@ export default function App() {
     if (result?.optimizedCode) {
       navigator.clipboard.writeText(result.optimizedCode);
       setCopied(true);
+      toast.success('Code copied to clipboard');
       setTimeout(() => setCopied(false), 2000);
     }
   };
@@ -337,13 +343,26 @@ export default function App() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      toast.success(`File downloaded as output.${ext}`);
     }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    processFile(file);
+    e.target.value = '';
+  };
 
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    processFile(file);
+  };
+
+  const processFile = (file: File) => {
     const reader = new FileReader();
     reader.onload = (event) => {
       const content = event.target?.result as string;
@@ -369,9 +388,9 @@ export default function App() {
       const newId = Math.random().toString(36).substring(7);
       setFiles([...files, { id: newId, name: file.name, code: content, language: newLang }]);
       setActiveFileId(newId);
+      toast.success(`Loaded ${file.name}`);
     };
     reader.readAsText(file);
-    e.target.value = '';
   };
 
   const actionConfig = {
@@ -414,7 +433,29 @@ export default function App() {
   };
 
   return (
-    <div className="h-dvh w-screen bg-[#000000] text-white font-sans overflow-hidden flex flex-col relative selection:bg-white/20 selection:text-white">
+    <div 
+      className="h-dvh w-screen bg-[#000000] text-white font-sans overflow-hidden flex flex-col relative selection:bg-white/20 selection:text-white"
+      onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+      onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
+      onDrop={handleDrop}
+    >
+      <Toaster theme="dark" position="bottom-right" />
+      {/* Drag Overlay */}
+      <AnimatePresence>
+        {isDragging && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-[100] bg-blue-500/20 backdrop-blur-sm border-4 border-blue-500 border-dashed m-4 rounded-3xl flex flex-col items-center justify-center pointer-events-none"
+          >
+            <Upload className="w-16 h-16 text-blue-400 mb-4 animate-bounce" />
+            <h2 className="text-2xl font-bold text-white tracking-tight">Drop file to upload</h2>
+            <p className="text-blue-200 mt-2 font-mono text-sm">Supports all major programming languages</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Beautiful Grid Background */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
       
@@ -558,6 +599,7 @@ export default function App() {
                   onClick={() => {
                     navigator.clipboard.writeText(activeFile.code);
                     setInputCopied(true);
+                    toast.success('Code copied to clipboard');
                     setTimeout(() => setInputCopied(false), 2000);
                   }}
                   className="ios-glass-btn relative text-neutral-500 hover:text-emerald-400 p-1.5 sm:p-2 rounded-lg group"
@@ -570,7 +612,10 @@ export default function App() {
                   <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-neutral-800 text-neutral-200 text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 border border-white/10 shadow-xl">Copy Code</span>
                 </button>
                 <button
-                  onClick={() => setCode('')}
+                  onClick={() => {
+                    setCode('');
+                    toast.success('Code cleared');
+                  }}
                   className="ios-glass-btn relative text-neutral-500 hover:text-red-400 p-1.5 sm:p-2 rounded-lg group"
                 >
                   <Trash2 className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
@@ -707,6 +752,22 @@ export default function App() {
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
+                          {action !== 'run' && (
+                            <div className="flex items-center bg-black/40 rounded-lg p-0.5 border border-white/5 mr-2">
+                              <button
+                                onClick={() => setViewMode('code')}
+                                className={`px-2 py-1 text-[10px] font-mono rounded-md transition-colors ${viewMode === 'code' ? 'bg-white/10 text-white' : 'text-neutral-500 hover:text-neutral-300'}`}
+                              >
+                                Code
+                              </button>
+                              <button
+                                onClick={() => setViewMode('diff')}
+                                className={`px-2 py-1 text-[10px] font-mono rounded-md transition-colors ${viewMode === 'diff' ? 'bg-white/10 text-white' : 'text-neutral-500 hover:text-neutral-300'}`}
+                              >
+                                Diff
+                              </button>
+                            </div>
+                          )}
                           <button
                             onClick={() => setWordWrap(!wordWrap)}
                             className={`ios-glass-btn relative flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-[9px] sm:text-[11px] font-mono rounded-md transition-colors shrink-0 group ${wordWrap ? 'text-white bg-white/10' : 'text-neutral-400 hover:text-white'}`}
@@ -737,25 +798,47 @@ export default function App() {
                         </div>
                       </div>
                       <div className="text-[11px] sm:text-[13px] leading-relaxed font-mono bg-black/20 overflow-hidden h-[40vh] sm:h-[50vh]">
-                        <MonacoEditor
-                          height="100%"
-                          language={action === 'run' ? 'shell' : getSyntaxLanguage(activeFile.language)}
-                          theme="aico-dark"
-                          value={result.optimizedCode}
-                          options={{
-                            readOnly: true,
-                            minimap: { enabled: false },
-                            fontSize: fontSize,
-                            wordWrap: wordWrap ? 'on' : 'off',
-                            padding: { top: 16 },
-                            scrollBeyondLastLine: false,
-                            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-                            renderLineHighlight: 'none',
-                            smoothScrolling: true,
-                            cursorBlinking: 'solid',
-                            domReadOnly: true,
-                          }}
-                        />
+                        {viewMode === 'diff' && action !== 'run' ? (
+                          <DiffEditor
+                            height="100%"
+                            language={getSyntaxLanguage(activeFile.language)}
+                            theme="aico-dark"
+                            original={activeFile.code}
+                            modified={result.optimizedCode}
+                            options={{
+                              readOnly: true,
+                              minimap: { enabled: false },
+                              fontSize: fontSize,
+                              wordWrap: wordWrap ? 'on' : 'off',
+                              padding: { top: 16 },
+                              scrollBeyondLastLine: false,
+                              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                              renderLineHighlight: 'none',
+                              smoothScrolling: true,
+                              renderSideBySide: false,
+                            }}
+                          />
+                        ) : (
+                          <MonacoEditor
+                            height="100%"
+                            language={action === 'run' ? 'shell' : getSyntaxLanguage(activeFile.language)}
+                            theme="aico-dark"
+                            value={result.optimizedCode}
+                            options={{
+                              readOnly: true,
+                              minimap: { enabled: false },
+                              fontSize: fontSize,
+                              wordWrap: wordWrap ? 'on' : 'off',
+                              padding: { top: 16 },
+                              scrollBeyondLastLine: false,
+                              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                              renderLineHighlight: 'none',
+                              smoothScrolling: true,
+                              cursorBlinking: 'solid',
+                              domReadOnly: true,
+                            }}
+                          />
+                        )}
                       </div>
                     </motion.div>
                   )}
