@@ -19,7 +19,7 @@ app.post("/api/optimize", async (req, res) => {
     const apiKey = rawApiKey.trim().replace(/^["']|["']$/g, '');
 
     if (!apiKey || apiKey === 'undefined' || apiKey === 'your_actual_api_key_here' || apiKey === 'MY_GEMINI_API_KEY') {
-      return res.status(500).json({ error: "GEMINI_API_KEY is missing or invalid. Please configure it in the AI Studio Secrets panel." });
+      return res.status(500).json({ error: `GEMINI_API_KEY is missing or invalid. Received: "${rawApiKey}". Please configure it in the AI Studio Secrets panel.` });
     }
 
     const ai = new GoogleGenAI({ apiKey });
