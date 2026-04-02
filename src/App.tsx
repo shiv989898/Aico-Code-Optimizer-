@@ -266,7 +266,7 @@ export default function App() {
     setResult(null);
 
     try {
-      const rawApiKey = process.env.GEMINI_API_KEY || '';
+      const rawApiKey = process.env.GEMINI_API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
       const apiKey = rawApiKey.trim().replace(/^["']|["']$/g, '');
 
       if (!apiKey || apiKey === 'undefined' || apiKey === 'your_actual_api_key_here' || apiKey === 'MY_GEMINI_API_KEY') {
